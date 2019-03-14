@@ -1,0 +1,39 @@
+{
+	"name": "vscode-flutter-i18n-json",
+	"displayName": "vscode-flutter-i18n-json",
+	"description": "VS Code extension to create a binding between your translations from .json files and your Flutter app.",
+	"version": "0.0.1",
+	"publisher": "Sascha Kiefer (esskar)",
+	"repository": "https://github.com/esskar/vscode-flutter-i18n-json",
+	"engines": {
+		"vscode": "^1.25.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:extension.flutterI18nJson"
+    ],
+    "license": "MIT",
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.flutterI18nJson",
+				"title": "Flutter I18n Json"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install"
+	},
+	"devDependencies": {
+		"@types/node": "^8.10.25",
+		"tslint": "^5.11.0",
+		"typescript": "^2.6.1",
+		"vscode": "^1.1.22"
+	}
+}
