@@ -6,7 +6,7 @@
 	"publisher": "Sascha Kiefer (esskar)",
 	"repository": "https://github.com/esskar/vscode-flutter-i18n-json",
 	"engines": {
-		"vscode": "^1.25.0"
+		"vscode": "^1.32.0"
 	},
 	"categories": [
 		"Other"
@@ -17,23 +17,23 @@
     "license": "MIT",
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
-				"command": "extension.flutterI18nJson",
-				"title": "Flutter I18n Json"
-			}
-		]
+		"commands": [{
+			"command": "extension.flutterI18nJsonInit",
+			"title": "Flutter I18n Json: Initialize"
+		}]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"postinstall": "node ./node_modules/vscode/bin/install"
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
 	"devDependencies": {
-		"@types/node": "^8.10.25",
-		"tslint": "^5.11.0",
-		"typescript": "^2.6.1",
-		"vscode": "^1.1.22"
+		"typescript": "^3.3.1",
+		"vscode": "^1.1.28",
+		"tslint": "^5.12.1",
+		"@types/node": "^10.12.21",
+		"@types/mocha": "^2.2.42"
 	}
 }
