@@ -1,10 +1,8 @@
-import * as path from 'path';
-import * as fs from 'fs';
-
-import { IDisposable } from './disposable.interface';
-import { I18nConfig } from './i18n-config.interface';
-import { InputBoxOptions } from 'vscode';
-import { VSCodeWindow } from './vscode.interfaces';
+import { IDisposable } from "./disposable.interface";
+import { I18nConfig, I18nFunction } from "./i18n.interfaces";
+import { FileSystem } from "./file-system";
+import { Hello } from "./hello";
+import { UserActions } from "./user-actions";
 
 export class I18nGenerator implements IDisposable {
     private static readonly defaultGeneratedPath = "lib/generated";
@@ -12,82 +10,192 @@ export class I18nGenerator implements IDisposable {
     private static readonly defaultLocale = "en";
     private static readonly i18nConfigFile = "i18nconfig.json";
 
+    private readonly hello = new Hello();
     private libGeneratedWorkspace: string;
     private i18nWorkspace: string;
 
     constructor(
         private workspaceFolder: string,
-        private window: VSCodeWindow) {
-        this.libGeneratedWorkspace = path.resolve(
+        private fs: FileSystem,
+        private ua: UserActions) {
+        this.libGeneratedWorkspace = this.fs.combinePath(
             this.workspaceFolder, I18nGenerator.defaultGeneratedPath);
-        this.i18nWorkspace = path.resolve(
+        this.i18nWorkspace = this.fs.combinePath(
             this.workspaceFolder, I18nGenerator.defaultI18nPath);
     }
 
-    async generateInitialize(): Promise<void> {
-        let defaultLocale = await this.prompt(
+    async generateInitializeAsync(): Promise<void> {
+        let defaultLocale = await this.ua.promptAsync(
             "Default two-letter locale code",
             I18nGenerator.defaultLocale, this.validateLocale);
         if (!defaultLocale) {
             defaultLocale = I18nGenerator.defaultLocale;
         }
 
-        await this.initialize();
-        await this.writeConfigFile({
+        const config = {
             defaultLocale: defaultLocale,
+            locales: [defaultLocale],
             localePath: I18nGenerator.defaultI18nPath,
             generatedPath: I18nGenerator.defaultGeneratedPath
+        };
+
+        await this.initializeAsync();
+        await this.writeConfigFileAsync(config);
+        await this.writeI18nFileAsync(defaultLocale, {
+            greetTo: this.hello.get(defaultLocale)
         });
+        await this.generateDartFileAsync(config);
     }
 
     dispose(): void { }
 
-    private async initialize(): Promise<void> {
-        await this.createFolder(this.libGeneratedWorkspace);
-        await this.createFolder(this.i18nWorkspace);
+    private async initializeAsync(): Promise<void> {
+        await this.fs.createFolderAsync(this.libGeneratedWorkspace);
+        await this.fs.createFolderAsync(this.i18nWorkspace);
     }
 
-    private createFolder(folder: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            fs.exists(folder, exists => {
-                if (exists) {
-                    // folder already exists, finish
-                    resolve();
+    private async generateDartFileAsync(config: I18nConfig): Promise<void> {
+        let dartContent = "";
+
+        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "");
+        const functions = this.buildFunctionTable(defaultI18n);
+
+        dartContent += this.generateFunctions(I18nGenerator.dart, "", functions);
+        
+        for (const locale of config.locales) {
+            if (locale === config.defaultLocale) {
+                dartContent += this.generateFunctions(
+                    I18nGenerator.dartLocale, locale);
+            } else {
+                dartContent += this.generateFunctions(
+                    I18nGenerator.dartLocale, locale, functions, true);
+            }
+        }
+
+        dartContent += this.generateLocales(I18nGenerator.dartGeneratedLocalizationsDelegate, config);
+
+        const filename = this.fs.combinePath(this.libGeneratedWorkspace, "i18n.dart");
+        await this.fs.writeFileAsync(filename, dartContent);
+    }
+
+    private generateFunctions(template: string, locale: string, functions?: I18nFunction[], overwrite?: boolean): string {
+        let functionsContent = "";
+
+        if (functions) {
+            for (const func of functions) {
+                if (functionsContent.length > 0) {
+                    functionsContent += "  ";
+                }
+                if (overwrite) {
+                    functionsContent += "@override\n";
+                    functionsContent += "  ";
+                }
+                functionsContent += `${func.signature} => ${func.body};\n`;
+            }
+        }
+
+        let result = template.replace(/{functions}/g, functionsContent);
+        result = result.replace(/{locale}/g, locale);
+        return result;
+    }
+
+    private generateLocales(template: string, config: I18nConfig): string {
+        let localesContent = "";
+        let casesContent = "";
+
+        for (let locale of config.locales) {
+            locale = locale.toLowerCase();
+            if (localesContent.length > 0) {
+                localesContent += ",\n";
+            }
+            localesContent += `const Locale("${locale}", "")`;
+            if (casesContent.length > 0) {
+                casesContent += "      ";
+            }
+            casesContent += `case "${locale}":\n`;
+            casesContent += `        return new SynchronousFuture<WidgetsLocalizations>(const _I18n_${locale}());\n`;
+        }
+
+        let result = template.replace("{locales}", localesContent);
+        result = result.replace("{cases}", casesContent);
+        return result;
+    }
+
+    private buildFunctionTable(i18n: any): I18nFunction[] {
+        const functions: I18nFunction[] = [];
+        for (const key in i18n) {
+            if (i18n.hasOwnProperty(key)) {
+                const value = i18n[key];
+                const variables = this.parseVariables(value);
+                if (variables && variables.length > 0) {
+                    const body = this.replaceVariables(value, variables);
+                    const parameters = this.getParameters(variables);
+                    functions.push({
+                        signature: `String ${key}(${parameters})`,
+                        body: `"${body}"`,
+                        variables: variables
+                    });
                 } else {
-                    fs.mkdir(folder, async error => {
-                        if (!error) {
-                            // everything good, finish
-                            resolve();
-                        } else if (error.code === "ENOENT") {
-                            // error, probably because the parent folder does not exist
-                            const parent = path.dirname(folder);
-                            await this.createFolder(parent);
-                            await this.createFolder(folder);
-                        } else {
-                            // other error, give up
-                            reject(error);
-                        }
+                    functions.push({
+                        signature: `String get ${key}`,
+                        body: `"${value}"`,
+                        variables: null
                     });
                 }
-            });
-        });
+            }
+        }
+        return functions;
     }
 
-    private async writeConfigFile(config: I18nConfig): Promise<void> {
-        const filename = path.resolve(this.workspaceFolder, I18nGenerator.i18nConfigFile);
-        const json = JSON.stringify(config, null, 4);
-        await this.writeFile(filename, json);
+    private async writeConfigFileAsync(config: I18nConfig): Promise<void> {
+        const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
+        await this.fs.writeJsonFileAsync(filename, config);
     }
 
-    private async prompt(text: string, placeHolder: string, validator: (x: string) => any): Promise<string | undefined> {
-        const options: InputBoxOptions = {
-            ignoreFocusOut: true,
-            placeHolder: placeHolder,
-            validateInput: validator,
-            prompt: text,
-        };
+    private readI18nFileAsync(locale: string): Promise<{}> {
+        const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
+        return this.fs.readJsonFileAsync<{}>(filename);
+    }
 
-        return await this.window.showInputBox(options);
+    private async writeI18nFileAsync(locale: string, i18n: any): Promise<void> {
+        const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
+        await this.fs.writeJsonFileAsync(filename, i18n);
+    }
+
+    private getParameters(variables: string[]): string {
+        let parameters = "";
+        for (const variable of variables) {
+            if (parameters.length > 0) {
+                parameters += ", ";
+            }
+            parameters += `String ${variable}`;
+        }
+        return parameters;
+    }
+
+    private replaceVariables(text: string, variables: string[]): string {
+        for (const variable of variables) {
+            text = text.replace(new RegExp(`{${variable}}`, "g"), `$${variable}`);
+        }
+        return text;
+    }
+
+    private parseVariables(text: string): string[] | null {
+        if (!text) {
+            return null;
+        }
+
+        const matches = /{(\w+)}/.exec(text);
+        if (!matches) {
+            return null;
+        }
+
+        const variables: string[] = [];
+        for (let i = 0; i < matches.length; i+= 2) {
+            variables.push(matches[i + 1]);
+        }
+        
+        return variables;
     }
 
     private validateLocale(locale: string): string | null {
@@ -104,11 +212,82 @@ export class I18nGenerator implements IDisposable {
         return null;
     }
 
-    private writeFile(filename: string, data: any): Promise<void> {
-        return new Promise((resolve, reject) => {
-            fs.writeFile(filename, data, error => {
-                error ? reject(error) : resolve();
-            })
-        });
-    }
+    private static readonly dart = `import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: camel_case_types
+// ignore_for_file: prefer_single_quotes
+
+//WARNING: This file is automatically generated. DO NOT EDIT, all your changes would be lost.
+
+class I18n implements WidgetsLocalizations {
+  const I18n();
+
+  static const GeneratedLocalizationsDelegate delegate =
+    const GeneratedLocalizationsDelegate();
+
+  static I18n of(BuildContext context) =>
+    Localizations.of<I18n>(context, WidgetsLocalizations);
+
+  @override
+  TextDirection get textDirection => TextDirection.ltr;
+
+  {functions}
 }
+`;
+
+    private static readonly dartLocale = `
+class _I18n_{locale} extends I18n {
+  const _I18n_{locale}();{functions}
+}
+`;
+
+    private static readonly dartGeneratedLocalizationsDelegate = `
+class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocalizations> {
+  const GeneratedLocalizationsDelegate();
+
+  List<Locale> get supportedLocales {
+    return const <Locale>[
+        {locales}
+    ];
+  }
+
+  LocaleResolutionCallback resolution({Locale fallback}) {
+    return (Locale locale, Iterable<Locale> supported) {
+      final Locale languageLocale = new Locale(locale.languageCode, "");
+      if (supported.contains(locale))
+        return locale;
+      else if (supported.contains(languageLocale))
+        return languageLocale;
+      else {
+        final Locale fallbackLocale = fallback ?? supported.first;
+        return fallbackLocale;
+      }
+    };
+  }
+
+  @override
+  Future<WidgetsLocalizations> load(Locale locale) {
+    final String lang = getLang(locale);
+    switch (lang) {
+      {cases}
+
+      default:
+        return new SynchronousFuture<WidgetsLocalizations>(const I18n());
+    }
+  }
+
+  @override
+  bool isSupported(Locale locale) => supportedLocales.contains(locale);
+
+  @override
+  bool shouldReload(GeneratedLocalizationsDelegate old) => false;
+
+  String getLang(Locale l) => l.countryCode != null && l.countryCode.isEmpty
+    ? l.languageCode
+    : l.toString();
+}`;
+}
+

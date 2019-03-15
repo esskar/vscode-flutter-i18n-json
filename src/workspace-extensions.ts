@@ -3,10 +3,6 @@ import {
 } from 'vscode';
 
 export class WorkspaceExtensions {
-    constructor() {
-
-    }
-
     getWorkspaceFolder(): string {
         const folders = workspace.workspaceFolders;
         if (!folders) {
