@@ -12,15 +12,17 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.flutterI18nJson"
-    ],
-    "license": "MIT",
+		"onCommand:extension.flutterI18nJsonInit"
+	],
+	"license": "MIT",
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [{
-			"command": "extension.flutterI18nJsonInit",
-			"title": "Flutter I18n Json: Initialize"
-		}]
+		"commands": [
+			{
+				"command": "extension.flutterI18nJsonInit",
+				"title": "Flutter I18n Json: Initialize"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
