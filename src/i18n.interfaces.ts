@@ -6,6 +6,7 @@ export interface I18nConfig {
 }
 
 export interface I18nFunction {
+    name: string;
     signature: string;
     body: string;
     variables: string[] | null;

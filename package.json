@@ -12,7 +12,9 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.flutterI18nJsonInit"
+		"onCommand:extension.flutterI18nJsonInit",
+		"onCommand:extension.flutterI18nJsonAdd",
+		"onCommand:extension.flutterI18nJsonUpdate"
 	],
 	"license": "MIT",
 	"main": "./out/extension.js",
@@ -21,6 +23,14 @@
 			{
 				"command": "extension.flutterI18nJsonInit",
 				"title": "Flutter I18n Json: Initialize"
+			},
+			{
+				"command": "extension.flutterI18nJsonAdd",
+				"title": "Flutter I18n Json: Add language"
+			},
+			{
+				"command": "extension.flutterI18nJsonUpdate",
+				"title": "Flutter I18n Json: Update"
 			}
 		]
 	},

@@ -22,6 +22,14 @@ export function activate(context: ExtensionContext) {
         i18nGenerator.generateInitializeAsync();
     }));
 
+    subscriptions.push(commands.registerCommand("extension.flutterI18nJsonAdd", () => {
+        i18nGenerator.generateAddAsync();
+    }));
+
+    subscriptions.push(commands.registerCommand("extension.flutterI18nJsonUpdate", () => {
+        i18nGenerator.generateUpdateAsync();
+    }));
+
     subscriptions.push(i18nGenerator);
 }
 

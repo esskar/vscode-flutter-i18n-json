@@ -31,6 +31,7 @@ export class I18nGenerator implements IDisposable {
         if (!defaultLocale) {
             defaultLocale = I18nGenerator.defaultLocale;
         }
+        defaultLocale = defaultLocale.toLowerCase();
 
         const config = {
             defaultLocale: defaultLocale,
@@ -44,6 +45,31 @@ export class I18nGenerator implements IDisposable {
         await this.writeI18nFileAsync(defaultLocale, {
             greetTo: this.hello.get(defaultLocale)
         });
+        await this.generateDartFileAsync(config);
+    }
+
+    async generateAddAsync(): Promise<void> {
+        const config = await this.readConfigFileAsync();
+        let locale = await this.ua.promptAsync(
+            "Add two-letter locale code",
+            I18nGenerator.defaultLocale, this.validateLocaleNotEmpty);
+        if (!locale) {
+            return;
+        }
+
+        locale = locale.toLowerCase();
+        if (config.locales.includes(locale)) {
+            return;
+        }
+        config.locales.push(locale);
+
+        await this.writeConfigFileAsync(config);
+        await this.writeI18nFileAsync(locale, {});
+        await this.generateDartFileAsync(config);
+    }
+
+    async generateUpdateAsync(): Promise<void> {
+        const config = await this.readConfigFileAsync();
         await this.generateDartFileAsync(config);
     }
 
@@ -67,8 +93,14 @@ export class I18nGenerator implements IDisposable {
                 dartContent += this.generateFunctions(
                     I18nGenerator.dartLocale, locale);
             } else {
-                dartContent += this.generateFunctions(
-                    I18nGenerator.dartLocale, locale, functions, true);
+                try {
+                    const i18n = await this.readI18nFileAsync(locale);
+                    const diff = this.diffFunctionTable(functions, i18n);
+                    dartContent += this.generateFunctions(
+                        I18nGenerator.dartLocale, locale, diff, true);
+                } catch (e) {
+                    console.error(`Failed to generate ${locale}: ${e}`);
+                }
             }
         }
 
@@ -80,17 +112,20 @@ export class I18nGenerator implements IDisposable {
 
     private generateFunctions(template: string, locale: string, functions?: I18nFunction[], overwrite?: boolean): string {
         let functionsContent = "";
+        if (overwrite) {
+            functionsContent += "\n";
+        }
 
         if (functions) {
             for (const func of functions) {
                 if (functionsContent.length > 0) {
-                    functionsContent += "  ";
+                    functionsContent += "\n  ";
                 }
                 if (overwrite) {
                     functionsContent += "@override\n";
                     functionsContent += "  ";
                 }
-                functionsContent += `${func.signature} => ${func.body};\n`;
+                functionsContent += `${func.signature} => ${func.body};`;
             }
         }
 
@@ -106,7 +141,7 @@ export class I18nGenerator implements IDisposable {
         for (let locale of config.locales) {
             locale = locale.toLowerCase();
             if (localesContent.length > 0) {
-                localesContent += ",\n";
+                localesContent += ",\n        ";
             }
             localesContent += `const Locale("${locale}", "")`;
             if (casesContent.length > 0) {
@@ -121,23 +156,55 @@ export class I18nGenerator implements IDisposable {
         return result;
     }
 
+    private diffFunctionTable(functions: I18nFunction[], i18n: any): I18nFunction[] {
+        const diffFunctions: I18nFunction[] = [];
+
+        for (const func of functions) {
+            const name = func.name;
+            if (i18n.hasOwnProperty(name)) {
+                const value = i18n[name];
+                const variables = func.variables;
+                if (variables && variables.length > 0) {
+                    const body = this.replaceVariables(value, variables);
+                    diffFunctions.push({
+                        name: name,
+                        signature: func.signature,
+                        body: `"${body}"`,
+                        variables: variables
+                    });
+                } else {
+                    diffFunctions.push({
+                        name: name,
+                        signature: func.signature,
+                        body: `"${value}"`,
+                        variables: null
+                    });
+                }
+            }
+        }
+
+        return diffFunctions;
+    }
+
     private buildFunctionTable(i18n: any): I18nFunction[] {
         const functions: I18nFunction[] = [];
-        for (const key in i18n) {
-            if (i18n.hasOwnProperty(key)) {
-                const value = i18n[key];
+        for (const name in i18n) {
+            if (i18n.hasOwnProperty(name)) {
+                const value = i18n[name];
                 const variables = this.parseVariables(value);
                 if (variables && variables.length > 0) {
                     const body = this.replaceVariables(value, variables);
                     const parameters = this.getParameters(variables);
                     functions.push({
-                        signature: `String ${key}(${parameters})`,
+                        name: name,
+                        signature: `String ${name}(${parameters})`,
                         body: `"${body}"`,
                         variables: variables
                     });
                 } else {
                     functions.push({
-                        signature: `String get ${key}`,
+                        name: name,
+                        signature: `String get ${name}`,
                         body: `"${value}"`,
                         variables: null
                     });
@@ -147,14 +214,19 @@ export class I18nGenerator implements IDisposable {
         return functions;
     }
 
-    private async writeConfigFileAsync(config: I18nConfig): Promise<void> {
-        const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
-        await this.fs.writeJsonFileAsync(filename, config);
-    }
-
     private readI18nFileAsync(locale: string): Promise<{}> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
         return this.fs.readJsonFileAsync<{}>(filename);
+    }
+
+    private readConfigFileAsync(): Promise<I18nConfig> {
+        const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
+        return this.fs.readJsonFileAsync<I18nConfig>(filename);
+    }
+
+    private async writeConfigFileAsync(config: I18nConfig): Promise<void> {
+        const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
+        await this.fs.writeJsonFileAsync(filename, config);
     }
 
     private async writeI18nFileAsync(locale: string, i18n: any): Promise<void> {
@@ -198,18 +270,25 @@ export class I18nGenerator implements IDisposable {
         return variables;
     }
 
-    private validateLocale(locale: string): string | null {
+    private validateLocale = (locale: string): string | null => {
         if (locale) {
             if (locale.includes(' ')) {
                 return "Spaces are not allowed.";
             }
-            if (locale.length != 2) {
+            if (locale.length !== 2) {
                 return "Locale needs to be two letters.";
             }
         }
 
         // no errors
         return null;
+    }
+
+    private validateLocaleNotEmpty = (locale: string): string | null => {
+        if (!locale) {
+            return "Locale cannot be empty";
+        }
+        return this.validateLocale(locale);
     }
 
     private static readonly dart = `import 'dart:async';
@@ -273,7 +352,6 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
     final String lang = getLang(locale);
     switch (lang) {
       {cases}
-
       default:
         return new SynchronousFuture<WidgetsLocalizations>(const I18n());
     }
