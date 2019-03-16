@@ -349,7 +349,7 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
 
   @override
   Future<WidgetsLocalizations> load(Locale locale) {
-    final String lang = getLang(locale);
+    final String lang = _getLang(locale);
     switch (lang) {
       {cases}
       default:
@@ -363,7 +363,7 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   @override
   bool shouldReload(GeneratedLocalizationsDelegate old) => false;
 
-  String getLang(Locale l) => l.countryCode != null && l.countryCode.isEmpty
+  String _getLang(Locale l) => l.countryCode != null && l.countryCode.isEmpty
     ? l.languageCode
     : l.toString();
 }`;
