@@ -1,51 +1,51 @@
 {
-	"name": "vscode-flutter-i18n-json",
-	"displayName": "vscode-flutter-i18n-json",
-	"description": "VS Code extension to create a binding between your translations from .json files and your Flutter app.",
-	"version": "0.0.1",
-	"publisher": "esskar",
-	"repository": "https://github.com/esskar/vscode-flutter-i18n-json",
-	"engines": {
-		"vscode": "^1.32.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onCommand:extension.flutterI18nJsonInit",
-		"onCommand:extension.flutterI18nJsonAdd",
-		"onCommand:extension.flutterI18nJsonUpdate"
-	],
-	"license": "MIT",
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "extension.flutterI18nJsonInit",
-				"title": "Flutter I18n Json: Initialize"
-			},
-			{
-				"command": "extension.flutterI18nJsonAdd",
-				"title": "Flutter I18n Json: Add language"
-			},
-			{
-				"command": "extension.flutterI18nJsonUpdate",
-				"title": "Flutter I18n Json: Update"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"postinstall": "node ./node_modules/vscode/bin/install",
-		"test": "npm run compile && node ./node_modules/vscode/bin/test"
-	},
-	"devDependencies": {
-		"typescript": "^3.3.1",
-		"vscode": "^1.1.28",
-		"tslint": "^5.12.1",
-		"@types/node": "^10.12.21",
-		"@types/mocha": "^2.2.42"
-	}
+  "name": "vscode-flutter-i18n-json",
+  "displayName": "vscode-flutter-i18n-json",
+  "description": "VS Code extension to create a binding between your translations from .json files and your Flutter app.",
+  "version": "0.1.0",
+  "publisher": "esskar",
+  "repository": "https://github.com/esskar/vscode-flutter-i18n-json",
+  "engines": {
+    "vscode": "^1.32.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.flutterI18nJsonInit",
+    "onCommand:extension.flutterI18nJsonAdd",
+    "onCommand:extension.flutterI18nJsonUpdate"
+  ],
+  "license": "MIT",
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.flutterI18nJsonInit",
+        "title": "Flutter I18n Json: Initialize"
+      },
+      {
+        "command": "extension.flutterI18nJsonAdd",
+        "title": "Flutter I18n Json: Add language"
+      },
+      {
+        "command": "extension.flutterI18nJsonUpdate",
+        "title": "Flutter I18n Json: Update"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "typescript": "^3.3.1",
+    "vscode": "^1.1.28",
+    "tslint": "^5.12.1",
+    "@types/node": "^10.12.21",
+    "@types/mocha": "^2.2.42"
+  }
 }
