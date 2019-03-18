@@ -8,6 +8,11 @@
   "engines": {
     "vscode": "^1.32.0"
   },
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
   "categories": [
     "Other"
   ],
