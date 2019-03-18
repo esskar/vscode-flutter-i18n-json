@@ -1,3 +1,5 @@
+let LocaleCode = require('locale-code');
+
 import { IDisposable } from "./disposable.interface";
 import { I18nConfig, I18nFunction } from "./i18n.interfaces";
 import { FileSystem } from "./file-system";
@@ -7,7 +9,7 @@ import { UserActions } from "./user-actions";
 export class I18nGenerator implements IDisposable {
     private static readonly defaultGeneratedPath = "lib/generated";
     private static readonly defaultI18nPath = "i18n";
-    private static readonly defaultLocale = "en";
+    private static readonly defaultLocale = "en-US";
     private static readonly i18nConfigFile = "i18nconfig.json";
 
     private readonly hello = new Hello();
@@ -26,7 +28,7 @@ export class I18nGenerator implements IDisposable {
 
     async generateInitializeAsync(): Promise<void> {
         let defaultLocale = await this.ua.promptAsync(
-            "Default two-letter locale code",
+            "Enter default locale code",
             I18nGenerator.defaultLocale, this.validateLocale);
         if (!defaultLocale) {
             defaultLocale = I18nGenerator.defaultLocale;
@@ -51,13 +53,11 @@ export class I18nGenerator implements IDisposable {
     async generateAddAsync(): Promise<void> {
         const config = await this.readConfigFileAsync();
         let locale = await this.ua.promptAsync(
-            "Add two-letter locale code",
+            "Add new locale code",
             I18nGenerator.defaultLocale, this.validateLocaleNotEmpty);
         if (!locale) {
             return;
         }
-
-        locale = locale.toLowerCase();
         if (config.locales.includes(locale)) {
             return;
         }
@@ -86,7 +86,7 @@ export class I18nGenerator implements IDisposable {
         const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "");
         const functions = this.buildFunctionTable(defaultI18n);
 
-        dartContent += this.generateFunctions(I18nGenerator.dart, "", functions);
+        dartContent += this.generateFunctions(I18nGenerator.dart, "", undefined, functions);
         
         for (const locale of config.locales) {
             if (locale === config.defaultLocale) {
@@ -97,7 +97,7 @@ export class I18nGenerator implements IDisposable {
                     const i18n = await this.readI18nFileAsync(locale);
                     const diff = this.diffFunctionTable(functions, i18n);
                     dartContent += this.generateFunctions(
-                        I18nGenerator.dartLocale, locale, diff, true);
+                        I18nGenerator.dartLocale, locale, config.locales, diff, true);
                 } catch (e) {
                     console.error(`Failed to generate ${locale}: ${e}`);
                 }
@@ -110,13 +110,25 @@ export class I18nGenerator implements IDisposable {
         await this.fs.writeFileAsync(filename, dartContent);
     }
 
-    private generateFunctions(template: string, locale: string, functions?: I18nFunction[], overwrite?: boolean): string {
+    private generateFunctions(template: string, locale: string, allLocales?: string[], functions?: I18nFunction[], overwrite?: boolean): string {
         let functionsContent = "";
         if (overwrite) {
             functionsContent += "\n";
         }
+        if (!allLocales) {
+            allLocales = [];
+        }
 
+        let derived = "";
         if (functions) {
+            const languageCode = LocaleCode.getLanguageCode(locale);
+            let pos = allLocales.indexOf(locale);
+            while (pos-- > 0) {
+                if (languageCode !== LocaleCode.getLanguageCode(allLocales[pos])) {
+                    continue;
+                }
+                derived = "_I18n_" + this.normalizeLocale(allLocales[pos]);
+            }
             for (const func of functions) {
                 if (functionsContent.length > 0) {
                     functionsContent += "\n  ";
@@ -129,8 +141,13 @@ export class I18nGenerator implements IDisposable {
             }
         }
 
+        if (!derived) {
+            derived = "I18n";
+        }
+
         let result = template.replace(/{functions}/g, functionsContent);
-        result = result.replace(/{locale}/g, locale);
+        result = result.replace(/{locale}/g, this.normalizeLocale(locale));
+        result = result.replace(/{derived}/g, derived);
         return result;
     }
 
@@ -138,17 +155,34 @@ export class I18nGenerator implements IDisposable {
         let localesContent = "";
         let casesContent = "";
 
+        const languageCodes: any = {};
         for (let locale of config.locales) {
-            locale = locale.toLowerCase();
+            const languageCode = LocaleCode.getLanguageCode(locale);
+            const countryCode = LocaleCode.getCountryCode(locale);
             if (localesContent.length > 0) {
-                localesContent += ",\n        ";
+                localesContent += ",\n      ";
             }
-            localesContent += `const Locale("${locale}", "")`;
+            localesContent += `const Locale("${languageCode}", "${countryCode}")`;
+            
+            const normalized = this.normalizeLocale(locale);
+            if (!languageCodes[languageCode]) {
+                languageCodes[languageCode] = normalized;
+            }
             if (casesContent.length > 0) {
-                casesContent += "      ";
+                casesContent += "    else ";
             }
-            casesContent += `case "${locale}":\n`;
-            casesContent += `        return new SynchronousFuture<WidgetsLocalizations>(const _I18n_${locale}());\n`;
+            casesContent += `if ("${normalized}" == lang) {\n`;
+            casesContent += `      return new SynchronousFuture<WidgetsLocalizations>(const _I18n_${normalized}());\n`;
+            casesContent += "    }\n";
+        }
+
+        for (let languageCode in languageCodes) {
+            if (languageCodes.hasOwnProperty(languageCode)) {
+                const normalized = languageCodes[languageCode];
+                casesContent += `    else if ("${languageCode}" == languageCode) {\n`;
+                casesContent += `      return new SynchronousFuture<WidgetsLocalizations>(const _I18n_${normalized}());\n`;
+                casesContent += "    }\n";
+            }
         }
 
         let result = template.replace("{locales}", localesContent);
@@ -245,11 +279,9 @@ export class I18nGenerator implements IDisposable {
         return parameters;
     }
 
-    private replaceVariables(text: string, variables: string[]): string {
-        for (const variable of variables) {
-            text = text.replace(new RegExp(`{${variable}}`, "g"), `$${variable}`);
-        }
-        return text;
+    private normalizeLocale(name: string): string {
+        name = name.replace("-", "_");
+        return name;
     }
 
     private parseVariables(text: string): string[] | null {
@@ -270,13 +302,17 @@ export class I18nGenerator implements IDisposable {
         return variables;
     }
 
+    private replaceVariables(text: string, variables: string[]): string {
+        for (const variable of variables) {
+            text = text.replace(new RegExp(`{${variable}}`, "g"), `$${variable}`);
+        }
+        return text;
+    }
+
     private validateLocale = (locale: string): string | null => {
         if (locale) {
-            if (locale.includes(' ')) {
-                return "Spaces are not allowed.";
-            }
-            if (locale.length !== 2) {
-                return "Locale needs to be two letters.";
+            if (!LocaleCode.validate(locale)) {
+                return "Locale not valid.";
             }
         }
 
@@ -318,7 +354,7 @@ class I18n implements WidgetsLocalizations {
 `;
 
     private static readonly dartLocale = `
-class _I18n_{locale} extends I18n {
+class _I18n_{locale} extends {derived} {
   const _I18n_{locale}();{functions}
 }
 `;
@@ -329,43 +365,41 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
 
   List<Locale> get supportedLocales {
     return const <Locale>[
-        {locales}
+      {locales}
     ];
   }
 
   LocaleResolutionCallback resolution({Locale fallback}) {
     return (Locale locale, Iterable<Locale> supported) {
-      final Locale languageLocale = new Locale(locale.languageCode, "");
-      if (supported.contains(locale))
+      if (this.isSupported(locale)) {
         return locale;
-      else if (supported.contains(languageLocale))
-        return languageLocale;
-      else {
-        final Locale fallbackLocale = fallback ?? supported.first;
-        return fallbackLocale;
       }
+      final Locale fallbackLocale = fallback ?? supported.first;
+      return fallbackLocale;
     };
   }
 
   @override
   Future<WidgetsLocalizations> load(Locale locale) {
-    final String lang = _getLang(locale);
-    switch (lang) {
-      {cases}
-      default:
-        return new SynchronousFuture<WidgetsLocalizations>(const I18n());
-    }
+    final String lang = locale != null ? locale.toString() : "";
+    final String languageCode = locale != null ? locale.languageCode : "";
+    {cases}
+    return new SynchronousFuture<WidgetsLocalizations>(const I18n());
   }
 
   @override
-  bool isSupported(Locale locale) => supportedLocales.contains(locale);
+  bool isSupported(Locale locale) {
+    for (var i = 0; i < supportedLocales.length && locale != null; i++) {
+      final l = supportedLocales[i];
+      if (l.languageCode == locale.languageCode) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @override
   bool shouldReload(GeneratedLocalizationsDelegate old) => false;
-
-  String _getLang(Locale l) => l.countryCode != null && l.countryCode.isEmpty
-    ? l.languageCode
-    : l.toString();
 }`;
 }
 
