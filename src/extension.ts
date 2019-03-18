@@ -18,15 +18,15 @@ export function activate(context: ExtensionContext) {
     const i18nGenerator = new I18nGenerator(
         workspaceFolder, new FileSystem(), new UserActions(window));
 
-    subscriptions.push(commands.registerCommand("extension.flutterI18nJsonInit", () => {
+    subscriptions.push(commands.registerCommand("flutterI18nJsonInit", () => {
         i18nGenerator.generateInitializeAsync();
     }));
 
-    subscriptions.push(commands.registerCommand("extension.flutterI18nJsonAdd", () => {
+    subscriptions.push(commands.registerCommand("flutterI18nJsonAdd", () => {
         i18nGenerator.generateAddAsync();
     }));
 
-    subscriptions.push(commands.registerCommand("extension.flutterI18nJsonUpdate", () => {
+    subscriptions.push(commands.registerCommand("flutterI18nJsonUpdate", () => {
         i18nGenerator.generateUpdateAsync();
     }));
 
