@@ -33,7 +33,6 @@ export class I18nGenerator implements IDisposable {
         if (!defaultLocale) {
             defaultLocale = I18nGenerator.defaultLocale;
         }
-        defaultLocale = defaultLocale.toLowerCase();
 
         const config = {
             defaultLocale: defaultLocale,
@@ -45,7 +44,7 @@ export class I18nGenerator implements IDisposable {
         await this.initializeAsync();
         await this.writeConfigFileAsync(config);
         await this.writeI18nFileAsync(defaultLocale, {
-            greetTo: this.hello.get(defaultLocale)
+            greetTo: this.hello.get(LocaleCode.getCountryCode(defaultLocale))
         });
         await this.generateDartFileAsync(config);
     }

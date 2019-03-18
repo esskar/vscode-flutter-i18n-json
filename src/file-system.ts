@@ -26,6 +26,7 @@ export class FileSystem {
                             const parent = path.dirname(folder);
                             await this.createFolderAsync(parent);
                             await this.createFolderAsync(folder);
+                            resolve();
                         } else {
                             // other error, give up
                             reject(error);
