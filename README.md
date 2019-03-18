@@ -8,6 +8,6 @@ To install the extension just execute the following command:
 
     ext install vscode-flutter-i18n-json
 
-You may also install the extension from the [visual studio extensions gallery][1].
+You may also install the extension from the [visual studio code marketplace][1].
 
 [1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
