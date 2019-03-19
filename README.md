@@ -54,3 +54,73 @@ After you change or add any translations, run the update command to update
     lib/generated/i18n.dart
 
 to reflect your translation changes.
+
+## Usage
+
+### JSON
+
+Use a simple key-value pair JSON format to define your translations.
+
+    {
+        "hello": "Hello"
+    }
+
+In the above example `"hello"` is the key for the translation value `"Hello!"`. 
+
+Placeholders are automatically detected and are enclosed in curly brackets (`{}`):
+
+    {
+        "greetTo", "Hello {name}"
+    }
+
+Here, `{name}` is a placeholder within the translation value for `"greetTo"`.
+
+### Dart
+
+Let's add some translations in `i18n/en-US.json`:
+
+    {
+        "hello": "Hello!",
+        "greetTo": "Nice to meet you, {name}!"
+    }
+
+After you run the update command, you will see that in `lib/generated/i18n.dart`, a getter `hello` and a method `greetTo` were created:
+
+    class I18n implements WidgetsLocalizations {
+      const I18n();
+
+      static const GeneratedLocalizationsDelegate delegate = 
+        const GeneratedLocalizationsDelegate();
+
+      static I18n of(BuildContext context) =>
+        Localizations.of<I18n>(context, WidgetsLocalizations);
+
+      @override
+      TextDirection get textDirection => TextDirection.ltr;
+
+      String get hello => "Hello!";
+      String greetTo(String name) => "Nice to meet you, $name!";
+    }
+
+Using the generated `I18n` class is showcased in the example below:
+
+    @override
+    Widget build(BuildContext context) {
+      final i18n = I18n.delegate;
+      return new MaterialApp(
+        localizationsDelegates: [
+          i18n
+        ],
+        supportedLocales: i18n.supportedLocales,
+        localeResolutionCallback: i18n.resolution(fallback: new Locale("en", "US"))
+        // .. any other properties supported and required by your application
+      );
+
+## Known problems
+
+### iOS Simulator
+
+There are still some [unresolved issues][1] in Flutter when trying to use localization with the iOS
+simulators. 
+
+[1]: https://github.com/flutter/flutter/issues/14128
