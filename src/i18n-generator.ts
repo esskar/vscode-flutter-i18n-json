@@ -47,6 +47,9 @@ export class I18nGenerator implements IDisposable {
             greetTo: this.hello.get(LocaleCode.getCountryCode(defaultLocale))
         });
         await this.generateDartFileAsync(config);
+
+        await this.ua.showInfo(`Successfully initialized localization with default locale '${defaultLocale}'.`);
+
     }
 
     async generateAddAsync(): Promise<void> {
@@ -65,11 +68,42 @@ export class I18nGenerator implements IDisposable {
         await this.writeConfigFileAsync(config);
         await this.writeI18nFileAsync(locale, {});
         await this.generateDartFileAsync(config);
+
+        await this.ua.showInfo(`Successfully added locale '${locale}'.`);
+    }
+
+    async generateRemoveAsync(): Promise<void> {
+        const config = await this.readConfigFileAsync();
+        let pickedLocale = await this.ua.pickAsync("Remove existing locale code", config.locales);
+        if (!pickedLocale) {
+            return;
+        }
+
+        if (config.defaultLocale === pickedLocale) {
+            await this.ua.showError(`Cannot remove the default locale '${pickedLocale}'.`);
+            return;
+        }
+
+        const index = config.locales.indexOf(pickedLocale);
+        if (index < 0) {
+            await this.ua.showError(`Cannot find locale '${pickedLocale}'.`);
+            return;
+        }
+
+        config.locales.splice(index, 1);
+        await this.writeConfigFileAsync(config);
+        await this.removeI18nFileAsync(pickedLocale);
+        await this.generateDartFileAsync(config);
+
+        await this.ua.showInfo(`Successfully removed locale '${pickedLocale}'.`);
     }
 
     async generateUpdateAsync(): Promise<void> {
         const config = await this.readConfigFileAsync();
         await this.generateDartFileAsync(config);
+
+        await this.ua.showInfo(`Successfully updated localization.`);
+
     }
 
     dispose(): void { }
@@ -265,6 +299,11 @@ export class I18nGenerator implements IDisposable {
     private async writeI18nFileAsync(locale: string, i18n: any): Promise<void> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
         await this.fs.writeJsonFileAsync(filename, i18n);
+    }
+
+    private async removeI18nFileAsync(locale: string): Promise<void> {
+        const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
+        await this.fs.deleteFileAsync(filename);
     }
 
     private getParameters(variables: string[]): string {

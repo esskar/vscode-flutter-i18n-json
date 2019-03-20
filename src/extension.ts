@@ -30,6 +30,10 @@ export function activate(context: ExtensionContext) {
         i18nGenerator.generateUpdateAsync();
     }));
 
+    subscriptions.push(commands.registerCommand("flutterI18nJsonRemove", () => {
+        i18nGenerator.generateRemoveAsync();
+    }));
+
     subscriptions.push(i18nGenerator);
 }
 

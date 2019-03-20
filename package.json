@@ -14,7 +14,8 @@
   "activationEvents": [
     "onCommand:flutterI18nJsonInit",
     "onCommand:flutterI18nJsonAdd",
-    "onCommand:flutterI18nJsonUpdate"
+    "onCommand:flutterI18nJsonUpdate",
+    "onCommand:flutterI18nJsonRemove"
   ],
   "license": "MIT",
   "main": "./out/extension.js",
@@ -26,11 +27,15 @@
       },
       {
         "command": "flutterI18nJsonAdd",
-        "title": "Flutter I18n Json: Add language"
+        "title": "Flutter I18n Json: Add locale"
       },
       {
         "command": "flutterI18nJsonUpdate",
         "title": "Flutter I18n Json: Update"
+      },
+      {
+        "command": "flutterI18nJsonRemove",
+        "title": "Flutter I18n Json: Remove locale"
       }
     ]
   },

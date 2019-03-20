@@ -6,7 +6,7 @@ export class FileSystem {
         return new Promise((resolve) => {
             fs.exists(folder, exists => {
                 resolve(exists);
-            })
+            });
         });
     }
 
@@ -41,6 +41,14 @@ export class FileSystem {
         return path.resolve(...pathSegments);
     }
 
+    deleteFileAsync(filename: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            fs.unlink(filename, error => {
+                error ? reject(error) : resolve();
+            });
+        });
+    }
+
     async readJsonFileAsync<T>(filename: string): Promise<T> {
         const json = await this.readFileAsync(filename);
         return JSON.parse(json) as T;
@@ -63,7 +71,7 @@ export class FileSystem {
         return new Promise((resolve, reject) => {
             fs.writeFile(filename, data, error => {
                 error ? reject(error) : resolve();
-            })
+            });
         });
     }
 }

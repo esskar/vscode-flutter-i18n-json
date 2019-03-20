@@ -33,9 +33,9 @@ The following files will be created:
     lib/generated/i18n.dart
     i18nconfig.json
 
-### Flutter I18n Json: Add language
+### Flutter I18n Json: Add locale
 
-Adds another language to your Flutter app.
+Adds another locale to your Flutter app.
 The command will ask you for a new locale.
 
 The following files will be created:
@@ -54,6 +54,20 @@ After you change or add any translations, run the update command to update
     lib/generated/i18n.dart
 
 to reflect your translation changes.
+
+### Flutter I18n Json: Remove locale
+
+Removes an existing locale from your Flutter app.
+The command will ask you to pick a locale from the list of existing locales.
+
+The following files will be removed:
+
+    i18n/<existing-locale>.json
+
+and updated:
+
+    lib/generated/i18n.dart
+    i18nconfig.json
 
 ## Usage
 
