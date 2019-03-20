@@ -10,8 +10,6 @@ To install the extension just execute the following command:
 
 You may also install the extension from the [visual studio code marketplace][1].
 
-[1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
-
 ## Getting started
 
 1. Install the extension
@@ -134,7 +132,8 @@ Using the generated `I18n` class is showcased in the example below:
 
 ### iOS Simulator
 
-There are still some [unresolved issues][1] in Flutter when trying to use localization with the iOS
+There are still some [unresolved issues][2] in Flutter when trying to use localization with the iOS
 simulators. 
 
-[1]: https://github.com/flutter/flutter/issues/14128
+[1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
+[2]: https://github.com/flutter/flutter/issues/14128
