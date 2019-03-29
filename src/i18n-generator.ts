@@ -327,17 +327,13 @@ export class I18nGenerator implements IDisposable {
             return null;
         }
 
-        const matches = /{(\w+)}/.exec(text);
-        if (!matches) {
-            return null;
-        }
-
         const variables: string[] = [];
-        for (let i = 0; i < matches.length; i+= 2) {
-            variables.push(matches[i + 1]);
+        const variableRegex = /{(\w+)}/g;
+        let matches: RegExpExecArray | null;
+        while (matches = variableRegex.exec(text)) {
+            variables.push(matches[1]);
         }
-        
-        return variables;
+        return variables.length ? variables : null;
     }
 
     private replaceVariables(text: string, variables: string[]): string {
