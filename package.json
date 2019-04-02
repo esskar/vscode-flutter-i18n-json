@@ -15,7 +15,8 @@
     "onCommand:flutterI18nJsonInit",
     "onCommand:flutterI18nJsonAdd",
     "onCommand:flutterI18nJsonUpdate",
-    "onCommand:flutterI18nJsonRemove"
+    "onCommand:flutterI18nJsonRemove",
+    "onCommand:flutterI18nGTranslateApiCodeAdd"
   ],
   "license": "MIT",
   "main": "./out/extension.js",
@@ -36,6 +37,10 @@
       {
         "command": "flutterI18nJsonRemove",
         "title": "Flutter I18n Json: Remove locale"
+      },
+      {
+        "command": "flutterI18nGTranslateApiCodeAdd",
+        "title": "Flutter I18n Json: Set Google Translate API Code"
       }
     ]
   },

@@ -3,6 +3,7 @@ export interface I18nConfig {
     locales: string[];
     localePath: string;
     generatedPath: string;
+    GoogleTranslateApiKey: string;
 }
 
 export interface I18nFunction {

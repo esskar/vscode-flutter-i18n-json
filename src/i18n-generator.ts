@@ -38,7 +38,8 @@ export class I18nGenerator implements IDisposable {
             defaultLocale: defaultLocale,
             locales: [defaultLocale],
             localePath: I18nGenerator.defaultI18nPath,
-            generatedPath: I18nGenerator.defaultGeneratedPath
+            generatedPath: I18nGenerator.defaultGeneratedPath,
+            GoogleTranslateApiKey: ""
         };
 
         await this.initializeAsync();
@@ -104,6 +105,22 @@ export class I18nGenerator implements IDisposable {
 
         await this.ua.showInfo(`Successfully updated localization.`);
 
+    }
+
+
+    async generateGTranslateApiCodeAdd(): Promise<void> {
+        const config = await this.readConfigFileAsync();
+        let apiKey = await this.ua.promptAsync(
+            "Set Google Translate API Key",
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", this.validateAPIKeyNotEmpty);
+        if (!apiKey) {
+            return;
+        }
+        
+        config.GoogleTranslateApiKey = apiKey;
+
+        await this.writeConfigFileAsync(config);
+        await this.ua.showInfo(`Saved Google Translate API key.`);
     }
 
     dispose(): void { }
@@ -363,6 +380,13 @@ export class I18nGenerator implements IDisposable {
             return "Locale cannot be empty";
         }
         return this.validateLocale(locale);
+    }
+    
+    private validateAPIKeyNotEmpty = (locale: string): string | null => {
+        if (!locale) {
+            return "API Key cannot be empty";
+        }
+        return null;
     }
 
     private static readonly dart = `import 'dart:async';

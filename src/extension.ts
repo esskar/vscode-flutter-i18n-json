@@ -34,6 +34,10 @@ export function activate(context: ExtensionContext) {
         i18nGenerator.generateRemoveAsync();
     }));
 
+    subscriptions.push(commands.registerCommand("flutterI18nGTranslateApiCodeAdd", () => {
+        i18nGenerator.generateGTranslateApiCodeAdd();
+    }));
+
     subscriptions.push(i18nGenerator);
 }
 
