@@ -5,6 +5,7 @@ import { I18nConfig, I18nFunction } from "./i18n.interfaces";
 import { FileSystem } from "./file-system";
 import { Hello } from "./hello";
 import { UserActions } from "./user-actions";
+import { AutoTranslator } from "./auto-translator";
 
 export class I18nGenerator implements IDisposable {
     private static readonly defaultGeneratedPath = "lib/generated";
@@ -122,6 +123,13 @@ export class I18nGenerator implements IDisposable {
         await this.writeConfigFileAsync(config);
         await this.ua.showInfo(`Saved Google Translate API key.`);
     }
+
+    async generateTranslationsAsync(): Promise<void> {
+        const config = await this.readConfigFileAsync();
+        if (await this.generateAutoTranslationsAsync(config)) {
+            await this.ua.showInfo(`Translations created.`);
+        }
+    }  
 
     dispose(): void { }
 
@@ -321,6 +329,55 @@ export class I18nGenerator implements IDisposable {
     private async removeI18nFileAsync(locale: string): Promise<void> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
         await this.fs.deleteFileAsync(filename);
+    }
+
+    private async generateAutoTranslationsAsync(config: I18nConfig): Promise<boolean> {
+        // Get all the default translations
+        const defaultI18n = await this.readI18nFileAsync(
+            config.defaultLocale || ""
+        );
+        // Initialize Translator
+        const translator: AutoTranslator = new AutoTranslator(config);
+
+        // All keys that are found in the default locale translation file.
+        const availableKeys = Object.keys(defaultI18n);
+
+        // For each available locale, while skipping the default locale,
+        // get the already made translations and check if some translations
+        // are missing. If so, make the translation and write the complete set
+        // of the translations back to the json file.
+        for (const locale of config.locales) {
+            if (locale === config.defaultLocale) {
+                continue;
+            } else {
+                try {
+                    // Already made translations for current locale.
+                    const translations: { [id: string]: any; } = await this.readI18nFileAsync(locale);
+
+                    // Go over all availableKeys of default locale translation file
+                    for (let availableTranslation of availableKeys) {
+
+                        // Check if the translation was already made, if not, create translation
+                        const index = Object.keys(translations).indexOf(availableTranslation);
+                        if (index === -1) {
+                            const itemToAdd: number = availableKeys.indexOf(availableTranslation);
+                            const originalText: String = Object.values(defaultI18n)[itemToAdd].toString();
+                            const translation: String = await translator.translate(originalText, locale);
+                            translations[availableTranslation] = translation;
+                            console.log(`${availableTranslation} in ${locale} is ${translation}`);
+                        }
+                    }
+
+                    // Write translations for locale into its file.
+                    this.writeI18nFileAsync(locale, translations);
+                } catch (e) {
+                    console.error(`Failed to build translations for ${locale}: ${e}`);
+                    await this.ua.showError(`Failed to build translations for ${locale}: ${e}`);
+                    return false; // Don't continue attempting to make additional translations.
+                }
+            }
+        }
+        return true;
     }
 
     private getParameters(variables: string[]): string {

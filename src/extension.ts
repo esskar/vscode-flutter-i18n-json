@@ -38,6 +38,10 @@ export function activate(context: ExtensionContext) {
         i18nGenerator.generateGTranslateApiCodeAdd();
     }));
 
+    subscriptions.push(commands.registerCommand("flutterI18nAutoTranslate", () => {
+        i18nGenerator.generateTranslationsAsync();
+    }));
+
     subscriptions.push(i18nGenerator);
 }
 
