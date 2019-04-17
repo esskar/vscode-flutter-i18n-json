@@ -3,6 +3,8 @@ export interface I18nConfig {
     locales: string[];
     localePath: string;
     generatedPath: string;
+    rtl?: string[];
+    ltr?: string[];
 }
 
 export interface I18nFunction {
