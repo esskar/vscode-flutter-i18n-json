@@ -128,6 +128,16 @@ Using the generated `I18n` class is showcased in the example below:
         // .. any other properties supported and required by your application
       );
 
+## Text direction
+
+Starting form version 0.12.0 the module detects the text direction automatically - based on the language code.
+If you want to change the automatic behaviour, you can change the text direction in the `i18nconfig.json` file:
+
+    {
+      rtl: ["ar-AR"],
+      ltr: []
+    }
+
 ## Known problems
 
 ### iOS Simulator
