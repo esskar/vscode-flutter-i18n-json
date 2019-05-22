@@ -153,9 +153,13 @@ simulators.
 
 Global widgets may throw exceptions informaing you that they cannot find any MaterialLocalizations (`No MaterialLocalizations found.`). You need to install them manually and add their delegates to your localizationsDelegates.
 
+in your pubspec.yaml:
+
     dev_dependencies:
       flutter_localizations:
         sdk: flutter
+
+in your app:
 
     return new MaterialApp(
         localizationsDelegates: [
