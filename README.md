@@ -138,7 +138,8 @@ If you want to change the automatic behaviour, you can change the text direction
       ltr: []
     }
 
-## Known problems
+
+## Troubleshooting
 
 ### iOS Simulator
 
@@ -147,3 +148,18 @@ simulators.
 
 [1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
 [2]: https://github.com/flutter/flutter/issues/14128
+
+### No MaterialLocalizations found.
+
+Global widgets may throw exceptions informaing you that they cannot find any MaterialLocalizations (`No MaterialLocalizations found.`). You need to install them manually and add their delegates to your localizationsDelegates.
+
+    dev_dependencies:
+      flutter_localizations:
+        sdk: flutter
+
+    return new MaterialApp(
+        localizationsDelegates: [
+          i18n,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          ...
