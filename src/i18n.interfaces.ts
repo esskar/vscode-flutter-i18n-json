@@ -3,6 +3,7 @@ export interface I18nConfig {
     locales: string[];
     localePath: string;
     generatedPath: string;
+    manualTranslation: boolean;
     rtl?: string[];
     ltr?: string[];
 }
