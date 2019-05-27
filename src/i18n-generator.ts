@@ -9,6 +9,7 @@ import { UserActions } from "./user-actions";
 
 export class I18nGenerator implements IDisposable {
     private static readonly defaultGeneratedPath = "lib/generated";
+    private static readonly allowManualTranslation = false;
     private static readonly defaultI18nPath = "i18n";
     private static readonly defaultLocale = "en-US";
     private static readonly i18nConfigFile = "i18nconfig.json";
@@ -35,11 +36,12 @@ export class I18nGenerator implements IDisposable {
             defaultLocale = I18nGenerator.defaultLocale;
         }
 
-        const config = {
+        const config = <I18nConfig>{
             defaultLocale: defaultLocale,
             locales: [defaultLocale],
             localePath: I18nGenerator.defaultI18nPath,
-            generatedPath: I18nGenerator.defaultGeneratedPath
+            generatedPath: I18nGenerator.defaultGeneratedPath,
+            manualTranslation: I18nGenerator.allowManualTranslation
         };
 
         this.updateRtl(config, defaultLocale);
@@ -128,7 +130,7 @@ export class I18nGenerator implements IDisposable {
         const functions = this.buildFunctionTable(defaultI18n);
 
         dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
-        
+
         for (const locale of config.locales) {
             const isLtr = !!(config.ltr && config.ltr.includes(locale));
             let isRtl = !!(config.rtl && config.rtl.includes(locale));
@@ -213,7 +215,7 @@ export class I18nGenerator implements IDisposable {
                 localesContent += ",\n      ";
             }
             localesContent += `const Locale("${languageCode}", "${countryCode}")`;
-            
+
             const normalized = this.normalizeLocale(locale);
             if (!languageCodes[languageCode]) {
                 languageCodes[languageCode] = normalized;
@@ -237,6 +239,7 @@ export class I18nGenerator implements IDisposable {
 
         let result = template.replace("{locales}", localesContent);
         result = result.replace("{cases}", casesContent);
+        result = result.replace('{shouldReloadBool}', config.manualTranslation.toString());
         return result;
     }
 
@@ -425,7 +428,7 @@ import 'package:flutter/material.dart';
 
 class I18n implements WidgetsLocalizations {
   const I18n();
-
+  static Locale locale;
   static const GeneratedLocalizationsDelegate delegate =
     const GeneratedLocalizationsDelegate();
 
@@ -451,7 +454,7 @@ class _I18n_{locale} extends {derived} {
     private static readonly dartGeneratedLocalizationsDelegate = `
 class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocalizations> {
   const GeneratedLocalizationsDelegate();
-
+  Locale _locale;
   List<Locale> get supportedLocales {
     return const <Locale>[
       {locales}
@@ -469,7 +472,9 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   }
 
   @override
-  Future<WidgetsLocalizations> load(Locale locale) {
+  Future<WidgetsLocalizations> load(Locale _locale) {
+    I18n.locale ??= _locale;
+    final Locale locale = I18n.locale;
     final String lang = locale != null ? locale.toString() : "";
     final String languageCode = locale != null ? locale.languageCode : "";
     {cases}
@@ -488,7 +493,7 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   }
 
   @override
-  bool shouldReload(GeneratedLocalizationsDelegate old) => false;
+  bool shouldReload(GeneratedLocalizationsDelegate old) => {shouldReloadBool};
 }`;
 }
 
