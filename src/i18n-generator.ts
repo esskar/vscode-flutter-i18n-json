@@ -460,7 +460,6 @@ class _I18n_{locale} extends {derived} {
     private static readonly dartGeneratedLocalizationsDelegate = `
 class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocalizations> {
   const GeneratedLocalizationsDelegate();
-  Locale _locale;
   List<Locale> get supportedLocales {
     return const <Locale>[
       {locales}
