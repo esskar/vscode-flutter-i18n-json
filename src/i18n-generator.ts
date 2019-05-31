@@ -282,14 +282,14 @@ export class I18nGenerator implements IDisposable {
                     functions.push({
                         name: name,
                         signature: `String ${name}(${parameters})`,
-                        body: `"${body}"`,
+                        body: `"""${body}"""`,
                         variables: variables
                     });
                 } else {
                     functions.push({
                         name: name,
                         signature: `String get ${name}`,
-                        body: `"${value}"`,
+                        body: `"""${value}"""`,
                         variables: null
                     });
                 }
