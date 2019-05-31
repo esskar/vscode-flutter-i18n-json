@@ -143,11 +143,7 @@ If you want to change the automatic behaviour, you can change the text direction
 
 ### iOS Simulator
 
-There are still some [unresolved issues][2] in Flutter when trying to use localization with the iOS
-simulators. 
-
-[1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
-[2]: https://github.com/flutter/flutter/issues/14128
+There are still some [unresolved issues][2] in Flutter when trying to use localization with the iOS simulators. For more information to address this issue check the [flutter documentation][3]. 
 
 ### No MaterialLocalizations found.
 
@@ -167,3 +163,8 @@ in your app:
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           ...
+
+
+[1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
+[2]: https://github.com/flutter/flutter/issues/14128
+[3]: https://flutter.dev/docs/development/accessibility-and-localization/internationalization#appendix-updating-the-ios-app-bundle
