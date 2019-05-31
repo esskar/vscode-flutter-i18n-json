@@ -282,20 +282,32 @@ export class I18nGenerator implements IDisposable {
                     functions.push({
                         name: name,
                         signature: `String ${name}(${parameters})`,
-                        body: `"""${body}"""`,
+                        body: `"${this.escapeString(body)}"`,
                         variables: variables
                     });
                 } else {
                     functions.push({
                         name: name,
                         signature: `String get ${name}`,
-                        body: `"""${value}"""`,
+                        body: `"${this.escapeString(value)}"`,
                         variables: null
                     });
                 }
             }
         }
         return functions;
+    }
+
+    private replaceAll(target: string, search: string, replacement: string): string {
+        return target.replace(new RegExp(search, 'g'), replacement);
+    }
+
+    private escapeString(s: string): string {
+        s = this.replaceAll(s, "\t", "\\t");
+        s = this.replaceAll(s, "\r", "\\r");
+        s = this.replaceAll(s, "\n", "\\n");
+        s = this.replaceAll(s, "\"", "\\\"");
+        return s;
     }
 
     private readI18nFileAsync(locale: string): Promise<{}> {
