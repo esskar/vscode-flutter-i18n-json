@@ -1,4 +1,5 @@
 let LocaleCode = require('locale-code');
+let RtlDetect = require('rtl-detect');
 
 import { IDisposable } from "./disposable.interface";
 import { I18nConfig, I18nFunction } from "./i18n.interfaces";
@@ -43,6 +44,8 @@ export class I18nGenerator implements IDisposable {
             GoogleTranslateApiKey: ""
         };
 
+        this.updateRtl(config, defaultLocale);
+
         await this.initializeAsync();
         await this.writeConfigFileAsync(config);
         await this.writeI18nFileAsync(defaultLocale, {
@@ -66,6 +69,8 @@ export class I18nGenerator implements IDisposable {
             return;
         }
         config.locales.push(locale);
+
+        this.updateRtl(config, locale);
 
         await this.writeConfigFileAsync(config);
         await this.writeI18nFileAsync(locale, {});
@@ -93,6 +98,9 @@ export class I18nGenerator implements IDisposable {
         }
 
         config.locales.splice(index, 1);
+
+        this.removeRtl(config, pickedLocale);
+
         await this.writeConfigFileAsync(config);
         await this.removeI18nFileAsync(pickedLocale);
         await this.generateDartFileAsync(config);
@@ -144,18 +152,24 @@ export class I18nGenerator implements IDisposable {
         const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "");
         const functions = this.buildFunctionTable(defaultI18n);
 
-        dartContent += this.generateFunctions(I18nGenerator.dart, "", undefined, functions);
+        dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
         
         for (const locale of config.locales) {
+            const isLtr = !!(config.ltr && config.ltr.includes(locale));
+            let isRtl = !!(config.rtl && config.rtl.includes(locale));
+            if (!isRtl && !isLtr) {
+                isRtl = RtlDetect.isRtlLang(locale);
+            }
+
             if (locale === config.defaultLocale) {
                 dartContent += this.generateFunctions(
-                    I18nGenerator.dartLocale, locale);
+                    I18nGenerator.dartLocale, locale, isRtl);
             } else {
                 try {
                     const i18n = await this.readI18nFileAsync(locale);
                     const diff = this.diffFunctionTable(functions, i18n);
                     dartContent += this.generateFunctions(
-                        I18nGenerator.dartLocale, locale, config.locales, diff, true);
+                        I18nGenerator.dartLocale, locale, isRtl, config.locales, diff, true);
                 } catch (e) {
                     console.error(`Failed to generate ${locale}: ${e}`);
                 }
@@ -168,7 +182,7 @@ export class I18nGenerator implements IDisposable {
         await this.fs.writeFileAsync(filename, dartContent);
     }
 
-    private generateFunctions(template: string, locale: string, allLocales?: string[], functions?: I18nFunction[], overwrite?: boolean): string {
+    private generateFunctions(template: string, locale: string, isRtl: boolean, allLocales?: string[], functions?: I18nFunction[], overwrite?: boolean): string {
         let functionsContent = "";
         if (overwrite) {
             functionsContent += "\n";
@@ -203,9 +217,12 @@ export class I18nGenerator implements IDisposable {
             derived = "I18n";
         }
 
+        const textDirection = isRtl ? "rtl" : "ltr";
+
         let result = template.replace(/{functions}/g, functionsContent);
         result = result.replace(/{locale}/g, this.normalizeLocale(locale));
         result = result.replace(/{derived}/g, derived);
+        result = result.replace(/{textDirection}/g, textDirection);
         return result;
     }
 
@@ -261,14 +278,14 @@ export class I18nGenerator implements IDisposable {
                     diffFunctions.push({
                         name: name,
                         signature: func.signature,
-                        body: `"${body}"`,
+                        body: `"${this.escapeString(body)}"`,
                         variables: variables
                     });
                 } else {
                     diffFunctions.push({
                         name: name,
                         signature: func.signature,
-                        body: `"${value}"`,
+                        body: `"${this.escapeString(value)}"`,
                         variables: null
                     });
                 }
@@ -290,20 +307,32 @@ export class I18nGenerator implements IDisposable {
                     functions.push({
                         name: name,
                         signature: `String ${name}(${parameters})`,
-                        body: `"${body}"`,
+                        body: `"${this.escapeString(body)}"`,
                         variables: variables
                     });
                 } else {
                     functions.push({
                         name: name,
                         signature: `String get ${name}`,
-                        body: `"${value}"`,
+                        body: `"${this.escapeString(value)}"`,
                         variables: null
                     });
                 }
             }
         }
         return functions;
+    }
+
+    private replaceAll(target: string, search: string, replacement: string): string {
+        return target.replace(new RegExp(search, 'g'), replacement);
+    }
+
+    private escapeString(s: string): string {
+        s = this.replaceAll(s, "\t", "\\t");
+        s = this.replaceAll(s, "\r", "\\r");
+        s = this.replaceAll(s, "\n", "\\n");
+        s = this.replaceAll(s, "\"", "\\\"");
+        return s;
     }
 
     private readI18nFileAsync(locale: string): Promise<{}> {
@@ -396,27 +425,57 @@ export class I18nGenerator implements IDisposable {
         return name;
     }
 
+    private updateRtl(config: I18nConfig, locale: string) {
+        if (!config.ltr) {
+            config.ltr = [];
+        }
+        if (!config.rtl) {
+            config.rtl = [];
+        }
+        if (config.ltr.includes(locale) || config.rtl.includes(locale)) {
+            return;
+        }
+
+        const isRtl = RtlDetect.isRtlLang(locale);
+        if (isRtl) {
+            config.rtl.push(locale);
+        } else {
+            config.ltr.push(locale);
+        }
+    }
+
+    private removeRtl(config: I18nConfig, locale: string) {
+        if (config.rtl) {
+            const index = config.rtl.indexOf(locale);
+            if (index >= 0) {
+                config.rtl.splice(index, 1);
+            }
+        }
+        if (config.ltr) {
+            const index = config.ltr.indexOf(locale);
+            if (index >= 0) {
+                config.ltr.splice(index, 1);
+            }
+        }
+    }
+
     private parseVariables(text: string): string[] | null {
         if (!text) {
             return null;
         }
 
-        const matches = /{(\w+)}/.exec(text);
-        if (!matches) {
-            return null;
-        }
-
         const variables: string[] = [];
-        for (let i = 0; i < matches.length; i+= 2) {
-            variables.push(matches[i + 1]);
+        const variableRegex = /{(\w+)}/g;
+        let matches: RegExpExecArray | null;
+        while (matches = variableRegex.exec(text)) {
+            variables.push(matches[1]);
         }
-        
-        return variables;
+        return variables.length ? variables : null;
     }
 
     private replaceVariables(text: string, variables: string[]): string {
         for (const variable of variables) {
-            text = text.replace(new RegExp(`{${variable}}`, "g"), `$${variable}`);
+            text = text.replace(new RegExp(`{${variable}}`, "g"), `$\{${variable}\}`);
         }
         return text;
     }
@@ -453,6 +512,7 @@ import 'package:flutter/material.dart';
 // ignore_for_file: non_constant_identifier_names
 // ignore_for_file: camel_case_types
 // ignore_for_file: prefer_single_quotes
+// ignore_for_file: unnecessary_brace_in_string_interps
 
 //WARNING: This file is automatically generated. DO NOT EDIT, all your changes would be lost.
 
@@ -475,6 +535,9 @@ class I18n implements WidgetsLocalizations {
     private static readonly dartLocale = `
 class _I18n_{locale} extends {derived} {
   const _I18n_{locale}();{functions}
+
+  @override
+  TextDirection get textDirection => TextDirection.{textDirection};
 }
 `;
 

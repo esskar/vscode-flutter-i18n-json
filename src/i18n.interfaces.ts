@@ -4,6 +4,8 @@ export interface I18nConfig {
     localePath: string;
     generatedPath: string;
     GoogleTranslateApiKey: string;
+    rtl?: string[];
+    ltr?: string[];
 }
 
 export interface I18nFunction {

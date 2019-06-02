@@ -175,7 +175,6 @@ For instance, if you added the `greetTo` key from above, with this command your 
     "hello": "¡Hola!"
 }
 ```
-
 to
 
 ```
@@ -197,8 +196,18 @@ class _I18n_es_ES extends I18n {
   String greetTo(String name) => "Encantado de conocerte, {nombre}!";
 }
 ```
+## Text direction
 
-## Known problems
+Starting form version 0.12.0 the module detects the text direction automatically - based on the language code.
+If you want to change the automatic behaviour, you can change the text direction in the `i18nconfig.json` file:
+
+    {
+      rtl: ["ar-AR"],
+      ltr: []
+    }
+
+
+## Troubleshooting
 
 ### iOS
 
@@ -243,3 +252,28 @@ etc...
 
 
 [1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
+There are still some [unresolved issues][2] in Flutter when trying to use localization with the iOS simulators. For more information to address this issue check the [flutter documentation][3]. 
+
+### No MaterialLocalizations found.
+
+Global widgets may throw exceptions informaing you that they cannot find any MaterialLocalizations (`No MaterialLocalizations found.`). You need to install them manually and add their delegates to your localizationsDelegates.
+
+in your pubspec.yaml:
+
+    dev_dependencies:
+      flutter_localizations:
+        sdk: flutter
+
+in your app:
+
+    return new MaterialApp(
+        localizationsDelegates: [
+          i18n,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          ...
+
+
+[1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
+[2]: https://github.com/flutter/flutter/issues/14128
+[3]: https://flutter.dev/docs/development/accessibility-and-localization/internationalization#appendix-updating-the-ios-app-bundle
