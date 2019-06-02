@@ -253,14 +253,14 @@ export class I18nGenerator implements IDisposable {
                     diffFunctions.push({
                         name: name,
                         signature: func.signature,
-                        body: `"${body}"`,
+                        body: `"${this.escapeString(body)}"`,
                         variables: variables
                     });
                 } else {
                     diffFunctions.push({
                         name: name,
                         signature: func.signature,
-                        body: `"${value}"`,
+                        body: `"${this.escapeString(value)}"`,
                         variables: null
                     });
                 }
