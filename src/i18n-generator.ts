@@ -9,7 +9,6 @@ import { UserActions } from "./user-actions";
 
 export class I18nGenerator implements IDisposable {
     private static readonly defaultGeneratedPath = "lib/generated";
-    private static readonly allowManualTranslation = false;
     private static readonly defaultI18nPath = "i18n";
     private static readonly defaultLocale = "en-US";
     private static readonly i18nConfigFile = "i18nconfig.json";
@@ -41,7 +40,6 @@ export class I18nGenerator implements IDisposable {
             locales: [defaultLocale],
             localePath: I18nGenerator.defaultI18nPath,
             generatedPath: I18nGenerator.defaultGeneratedPath,
-            manualTranslation: I18nGenerator.allowManualTranslation
         };
 
         this.updateRtl(config, defaultLocale);
