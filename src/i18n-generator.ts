@@ -439,7 +439,7 @@ typedef void LocaleChangeCallback(Locale locale);
 
 class I18n implements WidgetsLocalizations {
   const I18n();
-  static Locale locale;
+  static Locale _locale;
   static bool _shouldReload = false;
 
   static set locale(Locale _newLocale) {
@@ -493,9 +493,9 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
 
   @override
   Future<WidgetsLocalizations> load(Locale _locale) {
-    I18n.locale ??= _locale;
+    I18n._locale ??= _locale;
     I18n._shouldReload = false;
-    final Locale locale = I18n.locale;
+    final Locale locale = I18n._locale;
     final String lang = locale != null ? locale.toString() : "";
     final String languageCode = locale != null ? locale.languageCode : "";
     {cases}
