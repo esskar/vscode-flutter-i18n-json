@@ -12,6 +12,7 @@
     "Other"
   ],
   "activationEvents": [
+    "onLanguage:dart",
     "onCommand:flutterI18nJsonInit",
     "onCommand:flutterI18nJsonAdd",
     "onCommand:flutterI18nJsonUpdate",
