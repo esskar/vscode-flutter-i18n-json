@@ -2,7 +2,7 @@
   "name": "vscode-flutter-i18n-json",
   "displayName": "vscode-flutter-i18n-json",
   "description": "VS Code extension to create a binding between your translations from .json files and your Flutter app.",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "publisher": "esskar",
   "repository": "https://github.com/esskar/vscode-flutter-i18n-json",
   "engines": {
