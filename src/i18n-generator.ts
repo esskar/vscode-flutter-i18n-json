@@ -180,6 +180,9 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                 if (functionsContent.length > 0) {
                     functionsContent += "\n  ";
                 }
+
+                functionsContent += `/// ${func.body}\n  `;
+
                 if (overwrite) {
                     functionsContent += "@override\n";
                     functionsContent += "  ";
