@@ -1,17 +1,18 @@
 import {
     commands,
     window,
-    ExtensionContext
+    ExtensionContext,
+    languages,
 } from "vscode";
 
 import { I18nGenerator } from "./i18n-generator";
 import { FileSystem } from "./file-system";
 import { UserActions } from "./user-actions";
 import { WorkspaceExtensions } from "./workspace-extensions";
+import { InsertActionProvider } from "./InsertActionProvider";
 
 export function activate(context: ExtensionContext) {
     const subscriptions = context.subscriptions;
-
     const workspaceExtensions = new WorkspaceExtensions();
     const workspaceFolder = workspaceExtensions.getWorkspaceFolder();
 
@@ -35,6 +36,13 @@ export function activate(context: ExtensionContext) {
     }));
 
     subscriptions.push(i18nGenerator);
+
+    let provider = new InsertActionProvider(i18nGenerator);
+    subscriptions.push(languages.registerCodeActionsProvider(provider.filter, provider));
+
+    subscriptions.push(commands.registerCommand(provider.actionName, (input) => {
+        provider.insertAsync(input);
+    }));
 }
 
 export function deactivate() { }

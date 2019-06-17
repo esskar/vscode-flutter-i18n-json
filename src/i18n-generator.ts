@@ -6,8 +6,9 @@ import { I18nConfig, I18nFunction } from "./i18n.interfaces";
 import { FileSystem } from "./file-system";
 import { Hello } from "./hello";
 import { UserActions } from "./user-actions";
+import { InsertActionProviderDelegate } from "./InsertActionProvider";
 
-export class I18nGenerator implements IDisposable {
+export class I18nGenerator implements IDisposable, InsertActionProviderDelegate {
     private static readonly defaultGeneratedPath = "lib/generated";
     private static readonly defaultI18nPath = "i18n";
     private static readonly defaultLocale = "en-US";
@@ -111,7 +112,6 @@ export class I18nGenerator implements IDisposable {
         await this.generateDartFileAsync(config);
 
         await this.ua.showInfo(`Successfully updated localization.`);
-
     }
 
     dispose(): void { }
@@ -270,29 +270,32 @@ export class I18nGenerator implements IDisposable {
         return diffFunctions;
     }
 
+    buildFunction(name: string, value: string): I18nFunction {
+        const variables = this.parseVariables(value);
+        if (variables && variables.length > 0) {
+            const body = this.replaceVariables(value, variables);
+            const parameters = this.getParameters(variables);
+            return {
+                name: name,
+                signature: `String ${name}(${parameters})`,
+                body: `"${this.escapeString(body)}"`,
+                variables: variables
+            };
+        } else {
+            return {
+                name: name,
+                signature: `String get ${name}`,
+                body: `"${this.escapeString(value)}"`,
+                variables: null
+            };
+        }
+    }
+
     private buildFunctionTable(i18n: any): I18nFunction[] {
         const functions: I18nFunction[] = [];
         for (const name in i18n) {
             if (i18n.hasOwnProperty(name)) {
-                const value = i18n[name];
-                const variables = this.parseVariables(value);
-                if (variables && variables.length > 0) {
-                    const body = this.replaceVariables(value, variables);
-                    const parameters = this.getParameters(variables);
-                    functions.push({
-                        name: name,
-                        signature: `String ${name}(${parameters})`,
-                        body: `"${this.escapeString(body)}"`,
-                        variables: variables
-                    });
-                } else {
-                    functions.push({
-                        name: name,
-                        signature: `String get ${name}`,
-                        body: `"${this.escapeString(value)}"`,
-                        variables: null
-                    });
-                }
+                functions.push(this.buildFunction(name, i18n[name]));
             }
         }
         return functions;
@@ -310,12 +313,13 @@ export class I18nGenerator implements IDisposable {
         return s;
     }
 
-    private readI18nFileAsync(locale: string): Promise<{}> {
+
+    readI18nFileAsync(locale: string): Promise<{ [id: string]: any }> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
-        return this.fs.readJsonFileAsync<{}>(filename);
+        return this.fs.readJsonFileAsync(filename);
     }
 
-    private readConfigFileAsync(): Promise<I18nConfig> {
+    readConfigFileAsync(): Promise<I18nConfig> {
         const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
         return this.fs.readJsonFileAsync<I18nConfig>(filename);
     }
@@ -325,7 +329,7 @@ export class I18nGenerator implements IDisposable {
         await this.fs.writeJsonFileAsync(filename, config);
     }
 
-    private async writeI18nFileAsync(locale: string, i18n: any): Promise<void> {
+    async writeI18nFileAsync(locale: string, i18n: any): Promise<void> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
         await this.fs.writeJsonFileAsync(filename, i18n);
     }
