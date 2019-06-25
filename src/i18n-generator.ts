@@ -55,7 +55,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         });
         await this.generateDartFileAsync(config);
 
-        await this.ua.showInfo(`Successfully initialized localization with default locale '${defaultLocale}'.`);
+        this.ua.showInfo(`Successfully initialized localization with default locale '${defaultLocale}'.`);
 
     }
 
@@ -78,7 +78,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         await this.writeI18nFileAsync(locale, {});
         await this.generateDartFileAsync(config);
 
-        await this.ua.showInfo(`Successfully added locale '${locale}'.`);
+        this.ua.showInfo(`Successfully added locale '${locale}'.`);
     }
 
     async generateRemoveAsync(): Promise<void> {
@@ -89,13 +89,13 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         }
 
         if (config.defaultLocale === pickedLocale) {
-            await this.ua.showError(`Cannot remove the default locale '${pickedLocale}'.`);
+            this.ua.showError(`Cannot remove the default locale '${pickedLocale}'.`);
             return;
         }
 
         const index = config.locales.indexOf(pickedLocale);
         if (index < 0) {
-            await this.ua.showError(`Cannot find locale '${pickedLocale}'.`);
+            this.ua.showError(`Cannot find locale '${pickedLocale}'.`);
             return;
         }
 
@@ -107,14 +107,14 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         await this.removeI18nFileAsync(pickedLocale);
         await this.generateDartFileAsync(config);
 
-        await this.ua.showInfo(`Successfully removed locale '${pickedLocale}'.`);
+        this.ua.showInfo(`Successfully removed locale '${pickedLocale}'.`);
     }
 
     async generateUpdateAsync(): Promise<void> {
         const config = await this.readConfigFileAsync();
         await this.generateDartFileAsync(config);
 
-        await this.ua.showInfo(`Successfully updated localization.`);
+        this.ua.showInfo(`Successfully updated localization.`);
     }
 
 
@@ -130,14 +130,13 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         config.googleTranslateApiKey = apiKey;
 
         await this.writeConfigFileAsync(config);
-        await this.ua.showInfo(`Saved Google Translate API key.`);
+        this.ua.showInfo(`Saved Google Translate API key.`);
     }
 
     async generateTranslationsAsync(): Promise<void> {
         const config = await this.readConfigFileAsync();
         if (await this.generateAutoTranslationsAsync(config)) {
-            await this.ua.showInfo(`Translations created.`);
-
+            this.ua.showInfo(`Translations created.`);
             await this.generateUpdateAsync();
         }
     }  

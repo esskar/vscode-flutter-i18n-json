@@ -26,29 +26,33 @@ export class AutoTranslator {
   async translate(input: String, locale: string): Promise<string> {
     const apiKey = this.config.googleTranslateApiKey;
     if (!apiKey) {
-      throw "googleTranslateApiKey is not set.";
+      return Promise.reject("googleTranslateApiKey is not set.");
     }
 
-    const source = this.config.defaultLocale.substr(0, 2);
-    const target = locale.substr(0, 2);
+    try {
+      const source = this.config.defaultLocale.substr(0, 2);
+      const target = locale.substr(0, 2);
 
-    const googleTranslate = require('google-translate')(apiKey);
-    return new Promise<string>((resolve, reject) => {
-      googleTranslate.translate(input, source, target, (error: any, translation: GoogleTranslation) => {
-        if (error) {
-          if (error.body) {
-            const ge = JSON.parse(error.body) as GoogleError;
-            const message = ge.message || ge.error && ge.error.message;
-            reject(message);
+      const googleTranslate = require('google-translate')(apiKey);
+      return new Promise<string>((resolve, reject) => {
+        googleTranslate.translate(input, source, target, (error: any, translation: GoogleTranslation) => {
+          if (error) {
+            if (error.body) {
+              const ge = JSON.parse(error.body) as GoogleError;
+              const message = ge.message || ge.error && ge.error.message;
+              reject(message);
+            } else {
+              reject(error);
+            }
           } else {
-            reject(error);
+            const result = this.handleTranslation(translation);
+            resolve(result);
           }
-        } else {
-          const result = this.handleTranslation(translation);
-          resolve(result);
-        }
+        });
       });
-    });
+    } catch (e) {
+      return Promise.reject(e);
+    }
   }
 
   private handleTranslation(translation: GoogleTranslation): string {
