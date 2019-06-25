@@ -41,8 +41,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             defaultLocale: defaultLocale,
             locales: [defaultLocale],
             localePath: I18nGenerator.defaultI18nPath,
-            generatedPath: I18nGenerator.defaultGeneratedPath,
-            GoogleTranslateApiKey: ""
+            generatedPath: I18nGenerator.defaultGeneratedPath
         };
 
         this.updateRtl(config, defaultLocale);
@@ -119,14 +118,14 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
     async generateGTranslateApiCodeAdd(): Promise<void> {
         const config = await this.readConfigFileAsync();
-        let apiKey = await this.ua.promptAsync(
+        const apiKey = await this.ua.promptAsync(
             "Set Google Translate API Key",
             "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", this.validateAPIKeyNotEmpty);
         if (!apiKey) {
             return;
         }
         
-        config.GoogleTranslateApiKey = apiKey;
+        config.googleTranslateApiKey = apiKey;
 
         await this.writeConfigFileAsync(config);
         await this.ua.showInfo(`Saved Google Translate API key.`);

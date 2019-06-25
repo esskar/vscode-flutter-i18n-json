@@ -4,14 +4,15 @@ import * as request from "request-promise-native";
 // Translates given strings to specified locale,
 // using global I18nConfig having API key and defaultLocale
 export class AutoTranslator {
-  config: I18nConfig;
 
-  constructor(config: I18nConfig) {
-    this.config = config;
+  constructor(private config: I18nConfig) {
   }
 
   async translate(input: String, locale: string): Promise<String> {
-    const key: String = this.config.GoogleTranslateApiKey;
+    const key = this.config.googleTranslateApiKey;
+    if (!key) {
+      throw "googleTranslateApiKey is not set.";
+    }
 
     const query = {
       q: input,
