@@ -180,11 +180,13 @@ to
 ```
 {
     "hello": "¡Hola!",
-    "greetTo": "Encantado de conocerte, {nombre}!"
+    "greetTo": "Encantado de conocerte, {name}!"
 }
 ```
 
-If you **run the update command** now, you'll see that the Spanish WidgetsLocalizations are updated:
+
+
+The **run the update command** will run automatically after any successful automagic translation, so you'll see that the Spanish WidgetsLocalizations are updated as:
 
 ```
 class _I18n_es_ES extends I18n {
@@ -193,7 +195,7 @@ class _I18n_es_ES extends I18n {
   @override
   String get hello => "¡Hola!";
   @override
-  String greetTo(String name) => "Encantado de conocerte, {nombre}!";
+  String greetTo(String name) => "Encantado de conocerte, {name}!";
 }
 ```
 ## Text direction
