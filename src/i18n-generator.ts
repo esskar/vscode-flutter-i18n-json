@@ -8,6 +8,7 @@ import { Hello } from "./hello";
 import { UserActions } from "./user-actions";
 import { AutoTranslator } from "./auto-translator";
 import { InsertActionProviderDelegate } from "./InsertActionProvider";
+import { Variables } from "./variables";
 
 export class I18nGenerator implements IDisposable, InsertActionProviderDelegate {
     private static readonly defaultGeneratedPath = "lib/generated";
@@ -16,6 +17,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     private static readonly i18nConfigFile = "i18nconfig.json";
 
     private readonly hello = new Hello();
+    private readonly varibales = new Variables();
     private libGeneratedWorkspace: string;
     private i18nWorkspace: string;
 
@@ -276,7 +278,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                 const value = i18n[name];
                 const variables = func.variables;
                 if (variables && variables.length > 0) {
-                    const body = this.replaceVariables(value, variables);
+                    const body = this.varibales.replaceVariables(value, variables);
                     diffFunctions.push({
                         name: name,
                         signature: func.signature,
@@ -298,9 +300,9 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     }
 
     buildFunction(name: string, value: string): I18nFunction {
-        const variables = this.parseVariables(value);
+        const variables = this.varibales.parseVariables(value);
         if (variables && variables.length > 0) {
-            const body = this.replaceVariables(value, variables);
+            const body = this.varibales.replaceVariables(value, variables);
             const parameters = this.getParameters(variables);
             return {
                 name: name,
@@ -463,27 +465,6 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                 config.ltr.splice(index, 1);
             }
         }
-    }
-
-    private parseVariables(text: string): string[] | null {
-        if (!text) {
-            return null;
-        }
-
-        const variables: string[] = [];
-        const variableRegex = /{(\w+)}/g;
-        let matches: RegExpExecArray | null;
-        while (matches = variableRegex.exec(text)) {
-            variables.push(matches[1]);
-        }
-        return variables.length ? variables : null;
-    }
-
-    private replaceVariables(text: string, variables: string[]): string {
-        for (const variable of variables) {
-            text = text.replace(new RegExp(`{${variable}}`, "g"), `$\{${variable}\}`);
-        }
-        return text;
     }
 
     private validateLocale = (locale: string): string | null => {
