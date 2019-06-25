@@ -58,6 +58,7 @@
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
   "dependencies": {
+    "google-translate": "^2.2.0",
     "locale-code": "^2.0.2",
     "rtl-detect": "^1.0.2"
   },
