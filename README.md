@@ -1,6 +1,6 @@
 # vscode-flutter-i18n-json
 
-VS Code extension to create a binding between your translations from .json files and your Flutter app.
+VS Code extension to create a binding between your translations from .json files and your Flutter app. You can also automagically generate translations for all your locales, based on Google Translate.
 
 ## Installation
 
@@ -67,6 +67,35 @@ and updated:
     lib/generated/i18n.dart
     i18nconfig.json
 
+### Flutter I18n Json: Set Google Translate API Code
+
+Sets the API code for the Google Translate API.
+
+To obtain an API key, you need to have an account with the Google Cloud Platform:
+
+* Go to: https://console.developers.google.com/apis/dashboard
+* Select (or create) a project
+* Click button "Enable API's and services" (on top)
+* Search for "Cloud Translation API"
+* Click "Enable"
+* Once enabled, go to the "Credentials" (left side) section on your API overview
+* Click "Create credential" (top bar)
+* In de text "We'll help you set up the correct credentials. 
+If you want you can skip this step and create an API key, client ID or service account.", **choose the link "API key"**.
+* Give it a name and click "Create"
+
+You can copy the key now.
+
+The following file will be updated:
+
+    i18nconfig.json
+
+### Flutter I18n Json: Create automagic translations from default locale
+
+Generates and adds missing translations to `i18n/<locale>.json` files, based on the translation keys and values in `i18n/<default-locale>.json`.
+
+When using this command, you don't have to manually add every translation key and translated value to all `i18n/<locale>.json` files.
+
 ## Usage
 
 ### JSON
@@ -128,6 +157,45 @@ Using the generated `I18n` class is showcased in the example below:
         // .. any other properties supported and required by your application
       );
 
+When translating something, simply call your translation like this:
+
+```
+I18n.of(context).hello
+```
+_This returns a string you can direcly use in e.g. a Text() widget_
+
+### Generate translations
+
+After you run the Create automagic translations-command, all translation files will be supplemented with the new translations.
+
+For instance, if you added the `greetTo` key from above, with this command your `i18n/es-ES.json` goes from
+
+```
+{
+    "hello": "¡Hola!"
+}
+```
+to
+
+```
+{
+    "hello": "¡Hola!",
+    "greetTo": "Encantado de conocerte, {nombre}!"
+}
+```
+
+If you **run the update command** now, you'll see that the Spanish WidgetsLocalizations are updated:
+
+```
+class _I18n_es_ES extends I18n {
+  const _I18n_es_ES();
+
+  @override
+  String get hello => "¡Hola!";
+  @override
+  String greetTo(String name) => "Encantado de conocerte, {nombre}!";
+}
+```
 ## Text direction
 
 Starting form version 0.12.0 the module detects the text direction automatically - based on the language code.
@@ -141,8 +209,49 @@ If you want to change the automatic behaviour, you can change the text direction
 
 ## Troubleshooting
 
-### iOS Simulator
+### iOS
 
+By default, your languages are not supported by iOS out of the box. To enable them, add the following to your `your_project/ios/Runner/Info.plist` file:
+
+```
+<key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>es</string>
+    <string>ru</string>
+  </array>
+```
+_(with `en`, `es` and `ru` being examples for English, Spanish and Russian)_
+
+Your file should look something like this:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>es</string>
+    <string>ru</string>
+  </array>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+.
+.
+.
+etc...
+```
+
+
+[1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
 There are still some [unresolved issues][2] in Flutter when trying to use localization with the iOS simulators. For more information to address this issue check the [flutter documentation][3]. 
 
 ### No MaterialLocalizations found.
