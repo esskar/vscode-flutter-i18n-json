@@ -43,14 +43,14 @@ export function activate(context: ExtensionContext) {
         i18nGenerator.generateTranslationsAsync();
     }));
 
-    subscriptions.push(i18nGenerator);
-
-    let provider = new InsertActionProvider(i18nGenerator);
+    const provider = new InsertActionProvider(i18nGenerator);
     subscriptions.push(languages.registerCodeActionsProvider(provider.filter, provider));
 
     subscriptions.push(commands.registerCommand(provider.actionName, (input) => {
         provider.insertAsync(input);
     }));
+
+    subscriptions.push(i18nGenerator);
 }
 
 export function deactivate() { }
