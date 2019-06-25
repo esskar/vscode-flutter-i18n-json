@@ -137,6 +137,8 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         const config = await this.readConfigFileAsync();
         if (await this.generateAutoTranslationsAsync(config)) {
             await this.ua.showInfo(`Translations created.`);
+
+            await this.generateUpdateAsync();
         }
     }  
 
