@@ -1,5 +1,4 @@
 import { I18nConfig } from "./i18n.interfaces";
-import * as request from "request-promise-native";
 
 // Translates given strings to specified locale,
 // using global I18nConfig having API key and defaultLocale
@@ -9,6 +8,8 @@ export class AutoTranslator {
   }
 
   async translate(input: String, locale: string): Promise<String> {
+    return "!!!" + input;
+    /*
     const key = this.config.googleTranslateApiKey;
     if (!key) {
       throw "googleTranslateApiKey is not set.";
@@ -31,6 +32,6 @@ export class AutoTranslator {
     };
 
     const result = await request(options);
-    return result.data.translations[0].translatedText;
+    return result.data.translations[0].translatedText;*/
   }
 }
