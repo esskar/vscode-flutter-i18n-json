@@ -1,4 +1,4 @@
-import { CodeActionProvider, CodeActionKind, Range, CodeAction, TextDocument, DocumentFilter, CodeActionContext, Diagnostic, window, Position } from "vscode";
+import { CodeActionProvider, CodeActionKind, Range, CodeAction, TextDocument, DocumentFilter, CodeActionContext, Diagnostic, window } from "vscode";
 import { I18nConfig, I18nFunction } from "./i18n.interfaces";
 
 export interface InsertActionProviderDelegate {
@@ -25,9 +25,9 @@ export class InsertActionProvider implements CodeActionProvider {
     }
 
     extractName(context: CodeActionContext): [string, Diagnostic] | null {
-        for (let obj of context.diagnostics) {
+        for (const obj of context.diagnostics) {
             if (obj.code === "undefined_getter") {
-                let result = this.regex.exec(obj.message);
+                const result = this.regex.exec(obj.message);
                 if (result && result.length === 2) {
                     return [result[1], obj];
                 }
@@ -36,10 +36,10 @@ export class InsertActionProvider implements CodeActionProvider {
         return null;
     }
     provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext): CodeAction[] {
-        let result = this.extractName(context);
+        const result = this.extractName(context);
         if (result) {
-            let action = new CodeAction("I18n: add localization string", CodeActionKind.QuickFix);
-            let input: CommandInput = {
+            const action = new CodeAction("I18n: add localization string", CodeActionKind.QuickFix);
+            const input: CommandInput = {
                 name: result[0],
                 range: range
             };
@@ -83,9 +83,9 @@ export class InsertActionProvider implements CodeActionProvider {
     }
 
     async insertAsyncThrowing(input: CommandInput): Promise<void> {
-        let key = input.name;
+        const key = input.name;
 
-        let value = await window.showInputBox({
+        const value = await window.showInputBox({
             prompt: "Please enter key for the new localization value",
             placeHolder: "Value"
         });
@@ -97,10 +97,10 @@ export class InsertActionProvider implements CodeActionProvider {
 
         await this.addEntryToDefaultLocale(key, value);
 
-        let generated = this.delegate.buildFunction(key, value);
+        const generated = this.delegate.buildFunction(key, value);
         if (generated.variables) {
-            let joined = generated.variables.join(', ');
-            let methodCall = "(" + joined + ")";
+            const joined = generated.variables.join(', ');
+            const methodCall = "(" + joined + ")";
 
             window.activeTextEditor!.edit((x) => {
                 x.insert(input.range.end, methodCall);
