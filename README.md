@@ -140,7 +140,7 @@ After you run the update command, you will see that in `lib/generated/i18n.dart`
       TextDirection get textDirection => TextDirection.ltr;
 
       String get hello => "Hello!";
-      String greetTo(String name) => "Nice to meet you, $name!";
+      String greetTo(String name) => "Nice to meet you, ${name}!";
     }
 
 Using the generated `I18n` class is showcased in the example below:
