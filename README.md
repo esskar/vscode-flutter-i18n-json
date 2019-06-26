@@ -195,7 +195,7 @@ class _I18n_es_ES extends I18n {
   @override
   String get hello => "¡Hola!";
   @override
-  String greetTo(String name) => "Encantado de conocerte, {name}!";
+  String greetTo(String name) => "Encantado de conocerte, ${name}!";
 }
 ```
 ## Text direction
