@@ -54,3 +54,7 @@ export function activate(context: ExtensionContext) {
 }
 
 export function deactivate() { }
+
+String.prototype.upperCaseFirstLetter = function(): String {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};

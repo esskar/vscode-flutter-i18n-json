@@ -601,7 +601,7 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
                     // Consider no inherited properties
                     if (!flattenedSubObject.hasOwnProperty(subProperty)) { continue; }
                     // Populate with concatenated keys and value
-                    result[property + '_' + subProperty] = Object.values(flattenedSubObject)[subIndex];
+                    result[property + subProperty.upperCaseFirstLetter()] = Object.values(flattenedSubObject)[subIndex];
                     subIndex++;
                 }
             } else {
