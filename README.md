@@ -164,6 +164,39 @@ I18n.of(context).hello
 ```
 _This returns a string you can direcly use in e.g. a Text() widget_
 
+### Nesting
+
+Nesting is supported which allows you to hierarchically structure the translations.
+
+````
+{
+    "hello": "hello!",
+    "greeting": {
+        "formal": "Hello",
+        "informal": "Hi",
+        "placeholder": {
+            "formal": "Hello {name}",
+            "informal": "Hi {name}"
+        }
+    }
+}
+```
+
+The above file will generate the following dart code
+
+```
+/// "hello!"
+String get hello => "hello!";
+/// "Hello"
+String get greetingFormal => "Hello";
+/// "Hi"
+String get greetingInformal => "Hi";
+/// "Hello ${name}"
+String greetingPlaceholderFormal(String name) => "Hello ${name}";
+/// "Hi ${name}"
+String greetingPlaceholderInformal(String name) => "Hi ${name}";
+````
+
 ### Generate translations
 
 After you run the Create automagic translations-command, all translation files will be supplemented with the new translations.
