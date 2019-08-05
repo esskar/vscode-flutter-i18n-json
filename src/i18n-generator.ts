@@ -343,10 +343,13 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         return s;
     }
 
-    async readI18nFileAsync(locale: string): Promise<{ [id: string]: any }> {
+    async readI18nFileAsync(locale: string, noFlat?: boolean): Promise<{ [id: string]: any }> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
-        var jsonFileContent = await this.fs.readJsonFileAsync(filename);
-        return this.flattenObject(jsonFileContent);
+        const jsonFileContent: any = await this.fs.readJsonFileAsync(filename);
+        if (!noFlat) {
+            return this.flattenObject(jsonFileContent);
+        }
+        return jsonFileContent;
     }
 
     readConfigFileAsync(): Promise<I18nConfig> {
@@ -369,10 +372,45 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         await this.fs.deleteFileAsync(filename);
     }
 
+    private async generateAutoTranslationsSetAsync(
+        translator: AutoTranslator, 
+        locale: string, 
+        availableKeys: string[], 
+        defaultSet: any, 
+        translationSet: any): Promise<boolean> {
+        // Go over all availableKeys of default locale translation file
+        const translationKeys = Object.keys(translationSet);
+        for (let availableTranslation of availableKeys) {
+
+            const value = defaultSet[availableTranslation];
+
+            // Check if the translation was already made, if not, create translation
+            const index = translationKeys.indexOf(availableTranslation);
+            if (typeof value === "object") {
+                let translatedValue = translationSet[availableTranslation];
+                if (typeof translatedValue !== "object") {
+                    translatedValue = translationSet[availableTranslation] = {};
+                }
+                if (!await this.generateAutoTranslationsSetAsync(translator, locale, Object.keys(value), value, translatedValue)) {
+                    return false;
+                }
+            } else {
+                if (index === -1) {
+                    const originalText: String = value.toString();
+                    const translation: String = await translator.translate(originalText, locale);
+                    translationSet[availableTranslation] = translation;
+                    console.log(`${availableTranslation} in ${locale} is ${translation}`);
+                }
+            }
+        }
+
+        return true;
+    }
+
     private async generateAutoTranslationsAsync(config: I18nConfig): Promise<boolean> {
         // Get all the default translations
         const defaultI18n = await this.readI18nFileAsync(
-            config.defaultLocale || ""
+            config.defaultLocale || "", true
         );
         // Initialize Translator
         const translator: AutoTranslator = new AutoTranslator(config);
@@ -390,20 +428,11 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             } else {
                 try {
                     // Already made translations for current locale.
-                    const translations: { [id: string]: any; } = await this.readI18nFileAsync(locale);
+                    const translations: { [id: string]: any; } = await this.readI18nFileAsync(locale, true);
 
-                    // Go over all availableKeys of default locale translation file
-                    for (let availableTranslation of availableKeys) {
-
-                        // Check if the translation was already made, if not, create translation
-                        const index = Object.keys(translations).indexOf(availableTranslation);
-                        if (index === -1) {
-                            const itemToAdd: number = availableKeys.indexOf(availableTranslation);
-                            const originalText: String = Object.values(defaultI18n)[itemToAdd].toString();
-                            const translation: String = await translator.translate(originalText, locale);
-                            translations[availableTranslation] = translation;
-                            console.log(`${availableTranslation} in ${locale} is ${translation}`);
-                        }
+                    const result = await this.generateAutoTranslationsSetAsync(translator, locale, availableKeys, defaultI18n, translations);
+                    if (!result) {
+                        return result;
                     }
 
                     // Write translations for locale into its file.
@@ -491,6 +520,30 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             return "API Key cannot be empty";
         }
         return null;
+    }
+
+    private flattenObject = (obj: any): any => {
+        const result: any = {};
+        let index = 0;
+        for (const property in obj) {
+            if (!obj.hasOwnProperty(property)) { continue; }
+            const values = Object.values(obj);
+            const value = values[index];
+            if (value instanceof Object) {
+                const flattenedSubObject = this.flattenObject(value);
+                let subIndex = 0;
+                for (const subProperty in flattenedSubObject) {
+                    if (!flattenedSubObject.hasOwnProperty(subProperty)) { continue; }
+                    result[property + subProperty.upperCaseFirstLetter()] = Object.values(flattenedSubObject)[subIndex];
+                    subIndex++;
+                }
+            } else {
+                // Populate with key-value pair
+                result[property] = values[index];
+            }
+            index++;
+        }
+        return result;
     }
 
     private static readonly dart = `import 'dart:async';
@@ -585,32 +638,4 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   @override
   bool shouldReload(GeneratedLocalizationsDelegate old) => I18n._shouldReload;
 }`;
-
-    private flattenObject(obj: any) {
-        var result: any = {};
-        var index = 0;
-        for (var property in obj) {
-            // Consider no inherited properties
-            if (!obj.hasOwnProperty(property)) { continue; }
-            // Check if type 'object', if so flatten incl. children
-            var value = Object.values(obj)[index];
-            if (value instanceof Object) {
-                var flattenedSubObject = this.flattenObject(value);
-                var subIndex = 0;
-                for (var subProperty in flattenedSubObject) {
-                    // Consider no inherited properties
-                    if (!flattenedSubObject.hasOwnProperty(subProperty)) { continue; }
-                    // Populate with concatenated keys and value
-                    result[property + subProperty.upperCaseFirstLetter()] = Object.values(flattenedSubObject)[subIndex];
-                    subIndex++;
-                }
-            } else {
-                // Populate with key-value pair
-                result[property] = Object.values(obj)[index];
-            }
-            index++;
-        }
-        return result;
-    }
-
 }
