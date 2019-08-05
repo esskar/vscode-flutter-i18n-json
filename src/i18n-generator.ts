@@ -126,7 +126,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         if (!apiKey) {
             return;
         }
-        
+
         config.googleTranslateApiKey = apiKey;
 
         await this.writeConfigFileAsync(config);
@@ -139,7 +139,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             this.ua.showInfo(`Translations created.`);
             await this.generateUpdateAsync();
         }
-    }  
+    }
 
     dispose(): void { }
 
@@ -343,10 +343,10 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         return s;
     }
 
-
-    readI18nFileAsync(locale: string): Promise<{ [id: string]: any }> {
+    async readI18nFileAsync(locale: string): Promise<{ [id: string]: any }> {
         const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
-        return this.fs.readJsonFileAsync(filename);
+        var jsonFileContent = await this.fs.readJsonFileAsync(filename);
+        return this.flattenObject(jsonFileContent);
     }
 
     readConfigFileAsync(): Promise<I18nConfig> {
@@ -485,7 +485,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         }
         return this.validateLocale(locale);
     }
-    
+
     private validateAPIKeyNotEmpty = (locale: string): string | null => {
         if (!locale) {
             return "API Key cannot be empty";
@@ -585,5 +585,32 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   @override
   bool shouldReload(GeneratedLocalizationsDelegate old) => I18n._shouldReload;
 }`;
-}
 
+    private flattenObject(obj: any) {
+        var result: any = {};
+        var index = 0;
+        for (var property in obj) {
+            // Consider no inherited properties
+            if (!obj.hasOwnProperty(property)) { continue; }
+            // Check if type 'object', if so flatten incl. children
+            var value = Object.values(obj)[index];
+            if (value instanceof Object) {
+                var flattenedSubObject = this.flattenObject(value);
+                var subIndex = 0;
+                for (var subProperty in flattenedSubObject) {
+                    // Consider no inherited properties
+                    if (!flattenedSubObject.hasOwnProperty(subProperty)) { continue; }
+                    // Populate with concatenated keys and value
+                    result[property + subProperty.upperCaseFirstLetter()] = Object.values(flattenedSubObject)[subIndex];
+                    subIndex++;
+                }
+            } else {
+                // Populate with key-value pair
+                result[property] = Object.values(obj)[index];
+            }
+            index++;
+        }
+        return result;
+    }
+
+}
