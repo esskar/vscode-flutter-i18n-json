@@ -151,7 +151,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     private async generateDartFileAsync(config: I18nConfig): Promise<void> {
         let dartContent = "";
 
-        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "");
+        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", true);
         const functions = this.buildFunctionTable(defaultI18n);
 
         dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
@@ -300,10 +300,33 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         return diffFunctions;
     }
 
-    buildFunction(name: string, value: string): I18nFunction {
-        const variables = this.varibales.parseVariables(value);
+    createArrayBody(values: Array<string>) {
+        let body = "[";
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i];
+            body += `"${this.escapeString(value)}"`;
+            if (i !== values.length - 1) {
+                body += ", ";
+            }
+        }
+
+        body += "]";
+        return body;
+    }
+
+    buildFunction(name: string, value: string | Array<string>): I18nFunction {
+        if (value.constructor === Array) {
+            return {
+                name: name,
+                signature: `List<String> get ${name}`,
+                body: this.createArrayBody(value as Array<string>),
+                variables: null
+            };
+        }
+
+        const variables = this.varibales.parseVariables(value as string);
         if (variables && variables.length > 0) {
-            const body = this.varibales.replaceVariables(value, variables);
+            const body = this.varibales.replaceVariables(value as string, variables);
             const parameters = this.getParameters(variables);
             return {
                 name: name,
@@ -315,7 +338,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             return {
                 name: name,
                 signature: `String get ${name}`,
-                body: `"${this.escapeString(value)}"`,
+                body: `"${this.escapeString(value as string)}"`,
                 variables: null
             };
         }
@@ -373,10 +396,10 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     }
 
     private async generateAutoTranslationsSetAsync(
-        translator: AutoTranslator, 
-        locale: string, 
-        availableKeys: string[], 
-        defaultSet: any, 
+        translator: AutoTranslator,
+        locale: string,
+        availableKeys: string[],
+        defaultSet: any,
         translationSet: any): Promise<boolean> {
         // Go over all availableKeys of default locale translation file
         const translationKeys = Object.keys(translationSet);
