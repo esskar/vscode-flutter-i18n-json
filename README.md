@@ -197,6 +197,55 @@ String greetingPlaceholderFormal(String name) => "Hello ${name}";
 String greetingPlaceholderInformal(String name) => "Hi ${name}";
 ````
 
+### Changing locale manually
+
+Locale can be changed manually using static `locale` parameter. To make application reload from anywhere in the app you can use static `onLocaleChanged` callback:
+
+```dart
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final i18n = I18n.delegate;
+
+  @override
+  void initState() {
+    super.initState();
+    I18n.onLocaleChanged = onLocaleChange;
+  }
+
+  void onLocaleChange(Locale locale) {
+    setState(() {
+      I18n.locale = locale;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: app,
+      localizationsDelegates: [
+        i18n,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: i18n.supportedLocales,
+     home: <your home widget>
+    );
+  }
+}
+```
+
+Calling this anywhere in your app will now change the app's language
+
+```dart
+I18n.onLocaleChanged(newLocale);
+```
+
+
+
 ### Generate translations
 
 After you run the Create automagic translations-command, all translation files will be supplemented with the new translations.
