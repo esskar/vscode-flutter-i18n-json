@@ -1,5 +1,6 @@
 import { I18nConfig } from "./i18n.interfaces";
 import { Variables } from "./variables";
+const GoogleTranslate = require('google-translate');
 
 interface GoogleError {
   error?: GoogleError;
@@ -33,9 +34,9 @@ export class AutoTranslator {
       const source = this.config.defaultLocale.substr(0, 2);
       const target = locale.substr(0, 2);
 
-      const googleTranslate = require('google-translate')(apiKey);
+      const gt = GoogleTranslate(apiKey);
       return new Promise<string>((resolve, reject) => {
-        googleTranslate.translate(input, source, target, (error: any, translation: GoogleTranslation) => {
+        gt.translate(input, source, target, (error: any, translation: GoogleTranslation) => {
           if (error) {
             if (error.body) {
               const ge = JSON.parse(error.body) as GoogleError;

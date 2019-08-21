@@ -140,7 +140,7 @@ After you run the update command, you will see that in `lib/generated/i18n.dart`
       TextDirection get textDirection => TextDirection.ltr;
 
       String get hello => "Hello!";
-      String greetTo(String name) => "Nice to meet you, $name!";
+      String greetTo(String name) => "Nice to meet you, ${name}!";
     }
 
 Using the generated `I18n` class is showcased in the example below:
@@ -163,6 +163,88 @@ When translating something, simply call your translation like this:
 I18n.of(context).hello
 ```
 _This returns a string you can direcly use in e.g. a Text() widget_
+
+### Nesting
+
+Nesting is supported which allows you to hierarchically structure the translations.
+
+````
+{
+    "hello": "hello!",
+    "greeting": {
+        "formal": "Hello",
+        "informal": "Hi",
+        "placeholder": {
+            "formal": "Hello {name}",
+            "informal": "Hi {name}"
+        }
+    }
+}
+```
+
+The above file will generate the following dart code
+
+```
+/// "hello!"
+String get hello => "hello!";
+/// "Hello"
+String get greetingFormal => "Hello";
+/// "Hi"
+String get greetingInformal => "Hi";
+/// "Hello ${name}"
+String greetingPlaceholderFormal(String name) => "Hello ${name}";
+/// "Hi ${name}"
+String greetingPlaceholderInformal(String name) => "Hi ${name}";
+````
+
+### Changing locale manually
+
+Locale can be changed manually using static `locale` parameter. To make application reload from anywhere in the app you can use static `onLocaleChanged` callback:
+
+```dart
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final i18n = I18n.delegate;
+
+  @override
+  void initState() {
+    super.initState();
+    I18n.onLocaleChanged = onLocaleChange;
+  }
+
+  void onLocaleChange(Locale locale) {
+    setState(() {
+      I18n.locale = locale;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: app,
+      localizationsDelegates: [
+        i18n,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: i18n.supportedLocales,
+     home: <your home widget>
+    );
+  }
+}
+```
+
+Calling this anywhere in your app will now change the app's language
+
+```dart
+I18n.onLocaleChanged(newLocale);
+```
+
+
 
 ### Generate translations
 
@@ -195,7 +277,7 @@ class _I18n_es_ES extends I18n {
   @override
   String get hello => "¡Hola!";
   @override
-  String greetTo(String name) => "Encantado de conocerte, {name}!";
+  String greetTo(String name) => "Encantado de conocerte, ${name}!";
 }
 ```
 ## Text direction
