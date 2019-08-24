@@ -197,6 +197,29 @@ String greetingPlaceholderFormal(String name) => "Hello ${name}";
 String greetingPlaceholderInformal(String name) => "Hi ${name}";
 ````
 
+### Arrays
+
+Arrays of strings is supported too.
+
+````
+{
+    "hello": "hello!",
+    "greetings": [
+        "Hello",
+        "Hi"
+    ]
+}
+```
+
+The above file will generate the following dart code
+
+```
+/// "hello!"
+String get hello => "hello!";
+/// ["Hello", "Hi"]
+List<String> get greetings => ["Hello", "Hi"];
+````
+
 ### Changing locale manually
 
 Locale can be changed manually using static `locale` parameter. To make application reload from anywhere in the app you can use static `onLocaleChanged` callback:

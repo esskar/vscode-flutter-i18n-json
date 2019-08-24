@@ -151,7 +151,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     private async generateDartFileAsync(config: I18nConfig): Promise<void> {
         let dartContent = "";
 
-        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", true);
+        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", false);
         const functions = this.buildFunctionTable(defaultI18n);
 
         dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
@@ -315,7 +315,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     }
 
     buildFunction(name: string, value: string | Array<string>): I18nFunction {
-        if (value.constructor === Array) {
+        if (value instanceof Array) {
             return {
                 name: name,
                 signature: `List<String> get ${name}`,
@@ -552,7 +552,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             if (!obj.hasOwnProperty(property)) { continue; }
             const values = Object.values(obj);
             const value = values[index];
-            if (value instanceof Object) {
+            if (value instanceof Object && !(value instanceof Array)) {
                 const flattenedSubObject = this.flattenObject(value);
                 let subIndex = 0;
                 for (const subProperty in flattenedSubObject) {
