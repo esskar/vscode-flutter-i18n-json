@@ -3,8 +3,8 @@ import { I18nConfig, I18nFunction } from "./i18n.interfaces";
 
 export interface InsertActionProviderDelegate {
     readConfigFileAsync(): Promise<I18nConfig>;
-    readI18nFileAsync(locale: string): Promise<{ [id: string]: any }>;
-    writeI18nFileAsync(locale: string, i18n: any): Promise<void>;
+    readI18nFileAsync(locale: string, config: I18nConfig): Promise<{ [id: string]: any }>;
+    writeI18nFileAsync(locale: string, i18n: any, config: I18nConfig): Promise<void>;
     buildFunction(name: string, value: string): I18nFunction;
     generateUpdateAsync(): Promise<void>;
 }
@@ -71,7 +71,7 @@ export class InsertActionProvider implements CodeActionProvider {
         const config = await this.delegate.readConfigFileAsync();
         const locale = config.defaultLocale || "";
 
-        const defaultI18n = await this.delegate.readI18nFileAsync(locale);
+        const defaultI18n = await this.delegate.readI18nFileAsync(locale, config);
 
         if (defaultI18n.hasOwnProperty(key)) {
             window.showInformationMessage(`Key ${key} already exists.`);
@@ -79,7 +79,7 @@ export class InsertActionProvider implements CodeActionProvider {
         }
 
         defaultI18n[key] = value;
-        await this.delegate.writeI18nFileAsync(locale, defaultI18n);
+        await this.delegate.writeI18nFileAsync(locale, defaultI18n, config);
     }
 
     async insertAsyncThrowing(input: CommandInput): Promise<void> {
