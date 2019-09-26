@@ -102,17 +102,21 @@ When using this command, you don't have to manually add every translation key an
 
 Use a simple key-value pair JSON format to define your translations.
 
-    {
-        "hello": "Hello"
-    }
+```json
+{
+    "hello": "Hello"
+}
+```
 
 In the above example `"hello"` is the key for the translation value `"Hello!"`. 
 
 Placeholders are automatically detected and are enclosed in curly brackets (`{}`):
 
-    {
-        "greetTo", "Hello {name}"
-    }
+```json
+{
+    "greetTo": "Hello {name}"
+}
+```
 
 Here, `{name}` is a placeholder within the translation value for `"greetTo"`.
 
@@ -120,46 +124,52 @@ Here, `{name}` is a placeholder within the translation value for `"greetTo"`.
 
 Let's add some translations in `i18n/en-US.json`:
 
-    {
-        "hello": "Hello!",
-        "greetTo": "Nice to meet you, {name}!"
-    }
+```json
+{
+    "hello": "Hello!",
+    "greetTo": "Nice to meet you, {name}!"
+}
+```
 
 After you run the update command, you will see that in `lib/generated/i18n.dart`, a getter `hello` and a method `greetTo` were created:
 
-    class I18n implements WidgetsLocalizations {
-      const I18n();
+```dart
+class I18n implements WidgetsLocalizations {
+  const I18n();
 
-      static const GeneratedLocalizationsDelegate delegate = 
-        const GeneratedLocalizationsDelegate();
+  static const GeneratedLocalizationsDelegate delegate = 
+    const GeneratedLocalizationsDelegate();
 
-      static I18n of(BuildContext context) =>
-        Localizations.of<I18n>(context, WidgetsLocalizations);
+  static I18n of(BuildContext context) =>
+    Localizations.of<I18n>(context, WidgetsLocalizations);
 
-      @override
-      TextDirection get textDirection => TextDirection.ltr;
+  @override
+  TextDirection get textDirection => TextDirection.ltr;
 
-      String get hello => "Hello!";
-      String greetTo(String name) => "Nice to meet you, ${name}!";
-    }
+  String get hello => "Hello!";
+  String greetTo(String name) => "Nice to meet you, ${name}!";
+}
+```
 
 Using the generated `I18n` class is showcased in the example below:
 
-    @override
-    Widget build(BuildContext context) {
-      final i18n = I18n.delegate;
-      return new MaterialApp(
-        localizationsDelegates: [
-          i18n
-        ],
-        supportedLocales: i18n.supportedLocales,
-        localeResolutionCallback: i18n.resolution(fallback: new Locale("en", "US"))
-        // .. any other properties supported and required by your application
-      );
+```dart
+@override
+Widget build(BuildContext context) {
+  final i18n = I18n.delegate;
+  return new MaterialApp(
+    localizationsDelegates: [
+      i18n
+    ],
+    supportedLocales: i18n.supportedLocales,
+    localeResolutionCallback: i18n.resolution(fallback: new Locale("en", "US"))
+    // .. any other properties supported and required by your application
+  );
+```
 
 When translating something, simply call your translation like this:
 
-```
+```dart
 I18n.of(context).hello
 ```
 _This returns a string you can direcly use in e.g. a Text() widget_
@@ -168,7 +178,7 @@ _This returns a string you can direcly use in e.g. a Text() widget_
 
 Nesting is supported which allows you to hierarchically structure the translations.
 
-````
+```json
 {
     "hello": "hello!",
     "greeting": {
@@ -184,7 +194,7 @@ Nesting is supported which allows you to hierarchically structure the translatio
 
 The above file will generate the following dart code
 
-```
+```dart
 /// "hello!"
 String get hello => "hello!";
 /// "Hello"
@@ -201,7 +211,7 @@ String greetingPlaceholderInformal(String name) => "Hi ${name}";
 
 Arrays of strings is supported too.
 
-````
+```json
 {
     "hello": "hello!",
     "greetings": [
@@ -213,7 +223,7 @@ Arrays of strings is supported too.
 
 The above file will generate the following dart code
 
-```
+```dart
 /// "hello!"
 String get hello => "hello!";
 /// ["Hello", "Hi"]
@@ -278,14 +288,14 @@ After you run the Create automagic translations-command, all translation files w
 
 For instance, if you added the `greetTo` key from above, with this command your `i18n/es-ES.json` goes from
 
-```
+```json
 {
     "hello": "¡Hola!"
 }
 ```
 to
 
-```
+```json
 {
     "hello": "¡Hola!",
     "greetTo": "Encantado de conocerte, {name}!"
@@ -296,7 +306,7 @@ to
 
 The **run the update command** will run automatically after any successful automagic translation, so you'll see that the Spanish WidgetsLocalizations are updated as:
 
-```
+```dart
 class _I18n_es_ES extends I18n {
   const _I18n_es_ES();
 
@@ -323,7 +333,7 @@ If you want to change the automatic behaviour, you can change the text direction
 
 By default, your languages are not supported by iOS out of the box. To enable them, add the following to your `your_project/ios/Runner/Info.plist` file:
 
-```
+```xml
 <key>CFBundleLocalizations</key>
   <array>
     <string>en</string>
@@ -335,7 +345,7 @@ _(with `en`, `es` and `ru` being examples for English, Spanish and Russian)_
 
 Your file should look something like this:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -377,14 +387,15 @@ in your pubspec.yaml:
 in your app:
     import 'package:flutter_localizations/flutter_localizations.dart';
 
-    return new MaterialApp(
-        localizationsDelegates: [
-          i18n,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate
-          ...
-
+```dart
+return new MaterialApp(
+    localizationsDelegates: [
+      i18n,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate
+      ...
+```
 
 [1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
 [2]: https://github.com/flutter/flutter/issues/14128
