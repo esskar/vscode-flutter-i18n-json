@@ -202,6 +202,8 @@ String greetingPlaceholderInformal(String name) => "Hi ${name}";
 Locale can be changed manually using static `locale` parameter. To make application reload from anywhere in the app you can use static `onLocaleChanged` callback:
 
 ```dart
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 class MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
@@ -230,6 +232,7 @@ class _MyAppState extends State<MyApp> {
         i18n,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate // <-- needed for iOS
       ],
       supportedLocales: i18n.supportedLocales,
      home: <your home widget>
@@ -338,7 +341,7 @@ etc...
 [1]: https://marketplace.visualstudio.com/items?itemName=esskar.vscode-flutter-i18n-json
 There are still some [unresolved issues][2] in Flutter when trying to use localization with the iOS simulators. For more information to address this issue check the [flutter documentation][3]. 
 
-### No MaterialLocalizations found.
+### No Material-/CupertinoLocalizations found.
 
 Global widgets may throw exceptions informaing you that they cannot find any MaterialLocalizations (`No MaterialLocalizations found.`). You need to install them manually and add their delegates to your localizationsDelegates.
 
@@ -349,12 +352,14 @@ in your pubspec.yaml:
         sdk: flutter
 
 in your app:
+    import 'package:flutter_localizations/flutter_localizations.dart';
 
     return new MaterialApp(
         localizationsDelegates: [
           i18n,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate
           ...
 
 
