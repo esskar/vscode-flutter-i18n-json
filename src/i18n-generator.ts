@@ -18,17 +18,11 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
     private readonly hello = new Hello();
     private readonly varibales = new Variables();
-    private libGeneratedWorkspace: string;
-    private i18nWorkspace: string;
 
     constructor(
         private workspaceFolder: string,
         private fs: FileSystem,
         private ua: UserActions) {
-        this.libGeneratedWorkspace = this.fs.combinePath(
-            this.workspaceFolder, I18nGenerator.defaultGeneratedPath);
-        this.i18nWorkspace = this.fs.combinePath(
-            this.workspaceFolder, I18nGenerator.defaultI18nPath);
     }
 
     async generateInitializeAsync(): Promise<void> {
@@ -48,11 +42,11 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         this.updateRtl(config, defaultLocale);
 
-        await this.initializeAsync();
+        await this.initializeAsync(config);
         await this.writeConfigFileAsync(config);
         await this.writeI18nFileAsync(defaultLocale, {
             greetTo: this.hello.get(LocaleCode.getCountryCode(defaultLocale))
-        });
+        }, config);
         await this.generateDartFileAsync(config);
 
         this.ua.showInfo(`Successfully initialized localization with default locale '${defaultLocale}'.`);
@@ -74,8 +68,9 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         this.updateRtl(config, locale);
 
+        await this.initializeAsync(config);
         await this.writeConfigFileAsync(config);
-        await this.writeI18nFileAsync(locale, {});
+        await this.writeI18nFileAsync(locale, {}, config);
         await this.generateDartFileAsync(config);
 
         this.ua.showInfo(`Successfully added locale '${locale}'.`);
@@ -103,8 +98,9 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         this.removeRtl(config, pickedLocale);
 
+        await this.initializeAsync(config);
         await this.writeConfigFileAsync(config);
-        await this.removeI18nFileAsync(pickedLocale);
+        await this.removeI18nFileAsync(pickedLocale, config);
         await this.generateDartFileAsync(config);
 
         this.ua.showInfo(`Successfully removed locale '${pickedLocale}'.`);
@@ -112,6 +108,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
     async generateUpdateAsync(): Promise<void> {
         const config = await this.readConfigFileAsync();
+        await this.initializeAsync(config);
         await this.generateDartFileAsync(config);
 
         this.ua.showInfo(`Successfully updated localization.`);
@@ -129,12 +126,15 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         config.googleTranslateApiKey = apiKey;
 
+        await this.initializeAsync(config);
         await this.writeConfigFileAsync(config);
         this.ua.showInfo(`Saved Google Translate API key.`);
     }
 
     async generateTranslationsAsync(): Promise<void> {
         const config = await this.readConfigFileAsync();
+
+        await this.initializeAsync(config);
         if (await this.generateAutoTranslationsAsync(config)) {
             this.ua.showInfo(`Translations created.`);
             await this.generateUpdateAsync();
@@ -143,15 +143,15 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
     dispose(): void { }
 
-    private async initializeAsync(): Promise<void> {
-        await this.fs.createFolderAsync(this.libGeneratedWorkspace);
-        await this.fs.createFolderAsync(this.i18nWorkspace);
+    private async initializeAsync(config: I18nConfig): Promise<void> {
+        await this.fs.createFolderAsync(this.fs.combinePath(this.workspaceFolder, config.generatedPath));
+        await this.fs.createFolderAsync(this.fs.combinePath(this.workspaceFolder, config.localePath));
     }
 
     private async generateDartFileAsync(config: I18nConfig): Promise<void> {
         let dartContent = "";
 
-        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", false);
+        const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", config);
         const functions = this.buildFunctionTable(defaultI18n);
 
         dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
@@ -168,7 +168,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                     I18nGenerator.dartLocale, locale, isRtl);
             } else {
                 try {
-                    const i18n = await this.readI18nFileAsync(locale);
+                    const i18n = await this.readI18nFileAsync(locale, config);
                     const diff = this.diffFunctionTable(functions, i18n);
                     dartContent += this.generateFunctions(
                         I18nGenerator.dartLocale, locale, isRtl, config.locales, diff, true);
@@ -180,7 +180,8 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         dartContent += this.generateLocales(I18nGenerator.dartGeneratedLocalizationsDelegate, config);
 
-        const filename = this.fs.combinePath(this.libGeneratedWorkspace, "i18n.dart");
+        const path = this.fs.combinePath(this.workspaceFolder, config.generatedPath);
+        const filename = this.fs.combinePath(path, "i18n.dart");
         await this.fs.writeFileAsync(filename, dartContent);
     }
 
@@ -366,8 +367,14 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         return s;
     }
 
-    async readI18nFileAsync(locale: string, noFlat?: boolean): Promise<{ [id: string]: any }> {
-        const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
+    async readConfigFileAsync(): Promise<I18nConfig> {
+        const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
+        return await this.fs.readJsonFileAsync<I18nConfig>(filename);
+    }
+
+    async readI18nFileAsync(locale: string, config: I18nConfig, noFlat?: boolean): Promise<{ [id: string]: any }> {
+        const path = this.fs.combinePath(this.workspaceFolder, config.localePath);
+        const filename = this.fs.combinePath(path, `${locale}.json`);
         const jsonFileContent: any = await this.fs.readJsonFileAsync(filename);
         if (!noFlat) {
             return this.flattenObject(jsonFileContent);
@@ -375,9 +382,10 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         return jsonFileContent;
     }
 
-    readConfigFileAsync(): Promise<I18nConfig> {
-        const filename = this.fs.combinePath(this.workspaceFolder, I18nGenerator.i18nConfigFile);
-        return this.fs.readJsonFileAsync<I18nConfig>(filename);
+    async writeI18nFileAsync(locale: string, i18n: any, config: I18nConfig): Promise<void> {
+        const path = this.fs.combinePath(this.workspaceFolder, config.localePath);
+        const filename = this.fs.combinePath(path, `${locale}.json`);
+        await this.fs.writeJsonFileAsync(filename, i18n);
     }
 
     private async writeConfigFileAsync(config: I18nConfig): Promise<void> {
@@ -385,13 +393,9 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         await this.fs.writeJsonFileAsync(filename, config);
     }
 
-    async writeI18nFileAsync(locale: string, i18n: any): Promise<void> {
-        const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
-        await this.fs.writeJsonFileAsync(filename, i18n);
-    }
-
-    private async removeI18nFileAsync(locale: string): Promise<void> {
-        const filename = this.fs.combinePath(this.i18nWorkspace, `${locale}.json`);
+    private async removeI18nFileAsync(locale: string, config: I18nConfig): Promise<void> {
+        const path = this.fs.combinePath(this.workspaceFolder, config.localePath);
+        const filename = this.fs.combinePath(path, `${locale}.json`);
         await this.fs.deleteFileAsync(filename);
     }
 
@@ -433,7 +437,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     private async generateAutoTranslationsAsync(config: I18nConfig): Promise<boolean> {
         // Get all the default translations
         const defaultI18n = await this.readI18nFileAsync(
-            config.defaultLocale || "", true
+            config.defaultLocale || "", config, true
         );
         // Initialize Translator
         const translator: AutoTranslator = new AutoTranslator(config);
@@ -451,7 +455,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             } else {
                 try {
                     // Already made translations for current locale.
-                    const translations: { [id: string]: any; } = await this.readI18nFileAsync(locale, true);
+                    const translations: { [id: string]: any; } = await this.readI18nFileAsync(locale, config, true);
 
                     const result = await this.generateAutoTranslationsSetAsync(translator, locale, availableKeys, defaultI18n, translations);
                     if (!result) {
@@ -459,7 +463,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                     }
 
                     // Write translations for locale into its file.
-                    this.writeI18nFileAsync(locale, translations);
+                    this.writeI18nFileAsync(locale, translations, config);
                 } catch (e) {
                     console.error(`Failed to build translations for ${locale}: ${e}`);
                     await this.ua.showError(`Failed to build translations for ${locale}: ${e}`);
