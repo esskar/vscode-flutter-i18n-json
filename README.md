@@ -385,9 +385,10 @@ in your pubspec.yaml:
         sdk: flutter
 
 in your app:
-    import 'package:flutter_localizations/flutter_localizations.dart';
 
 ```dart
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 return new MaterialApp(
     localizationsDelegates: [
       i18n,
