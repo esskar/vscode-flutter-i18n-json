@@ -154,6 +154,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", config);
         const functions = this.buildFunctionTable(defaultI18n);
+        this.functionNamesMap.clear();
 
         dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
 
