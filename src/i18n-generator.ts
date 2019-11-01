@@ -591,9 +591,9 @@ class I18n implements WidgetsLocalizations {
   static Locale _locale;
   static bool _shouldReload = false;
 
-  static set locale(Locale _newLocale) {
+  static set locale(Locale newLocale) {
     _shouldReload = true;
-    I18n._locale = _newLocale;
+    I18n._locale = newLocale;
   }
 
   static const GeneratedLocalizationsDelegate delegate = GeneratedLocalizationsDelegate();
@@ -643,8 +643,8 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   Future<WidgetsLocalizations> load(Locale locale) {
     I18n._locale ??= locale;
     I18n._shouldReload = false;
-    final String lang = I18n._locale != null ? locale.toString() : "";
-    final String languageCode = I18n._locale != null ? locale.languageCode : "";
+    final String lang = I18n._locale != null ? I18n._locale.toString() : "";
+    final String languageCode = I18n._locale != null ? I18n._locale.languageCode : "";
     {cases}
     return SynchronousFuture<WidgetsLocalizations>(const I18n());
   }
