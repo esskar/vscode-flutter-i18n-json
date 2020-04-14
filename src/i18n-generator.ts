@@ -253,7 +253,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                 casesContent += "    else ";
             }
             casesContent += `if ("${normalized}" == lang) {\n`;
-            casesContent += `      return SynchronousFuture<WidgetsLocalizations>(const _I18n_${normalized}());\n`;
+            casesContent += `      I18n.current = const _I18n_${normalized}();\n`;
             casesContent += "    }\n";
         }
 
@@ -261,7 +261,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
             if (languageCodes.hasOwnProperty(languageCode)) {
                 const normalized = languageCodes[languageCode];
                 casesContent += `    else if ("${languageCode}" == languageCode) {\n`;
-                casesContent += `      return SynchronousFuture<WidgetsLocalizations>(const _I18n_${normalized}());\n`;
+                casesContent += `      I18n.current = const _I18n_${normalized}();\n`;
                 casesContent += "    }\n";
             }
         }
@@ -590,6 +590,7 @@ class I18n implements WidgetsLocalizations {
   const I18n();
   static Locale _locale;
   static bool _shouldReload = false;
+  static I18n current;
 
   static set locale(Locale newLocale) {
     _shouldReload = true;
@@ -646,7 +647,8 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
     final String lang = I18n._locale != null ? I18n._locale.toString() : "";
     final String languageCode = I18n._locale != null ? I18n._locale.languageCode : "";
     {cases}
-    return SynchronousFuture<WidgetsLocalizations>(const I18n());
+    I18n.current ??= const I18n();
+    return SynchronousFuture<WidgetsLocalizations>(I18n.current);
   }
 
   @override
