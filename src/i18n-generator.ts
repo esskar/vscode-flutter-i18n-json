@@ -287,7 +287,16 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                         body: `"${this.escapeString(body)}"`,
                         variables: variables
                     });
-                } else {
+                }
+                else if (value instanceof Array) {
+                    diffFunctions.push({
+                        name: name,
+                        signature: func.signature,
+                        body: this.createArrayBody(value as Array<string>),
+                        variables: null
+                    });
+                }
+                else {
                     diffFunctions.push({
                         name: name,
                         signature: func.signature,
