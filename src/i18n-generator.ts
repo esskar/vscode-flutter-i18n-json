@@ -634,7 +634,7 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
       if (isSupported(locale)) {
         return locale;
       }
-      final Locale fallbackLocale = fallback ?? supported.first;
+      final fallbackLocale = fallback ?? supported.first;
       return fallbackLocale;
     };
   }
@@ -643,8 +643,8 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
   Future<WidgetsLocalizations> load(Locale locale) {
     I18n._locale ??= locale;
     I18n._shouldReload = false;
-    final String lang = I18n._locale != null ? I18n._locale.toString() : "";
-    final String languageCode = I18n._locale != null ? I18n._locale.languageCode : "";
+    final lang = I18n._locale != null ? I18n._locale.toString() : '';
+    final languageCode = I18n._locale != null ? I18n._locale.languageCode : '';
     {cases}
     return SynchronousFuture<WidgetsLocalizations>(const I18n());
   }
