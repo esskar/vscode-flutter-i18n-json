@@ -641,7 +641,7 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
 
   @override
   Future<WidgetsLocalizations> load(Locale locale) {
-    I18n._locale ??= locale;
+    I18n._locale = locale;
     I18n._shouldReload = false;
     final String lang = I18n._locale != null ? I18n._locale.toString() : "";
     final String languageCode = I18n._locale != null ? I18n._locale.languageCode : "";
