@@ -235,6 +235,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
     private generateLocales(template: string, config: I18nConfig): string {
         let localesContent = "";
         let casesContent = "";
+        let getLocale = "";
 
         const languageCodes: any = {};
         for (let locale of config.locales) {
@@ -258,16 +259,24 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
         }
 
         for (let languageCode in languageCodes) {
+            const normalized = languageCodes[languageCode];
             if (languageCodes.hasOwnProperty(languageCode)) {
-                const normalized = languageCodes[languageCode];
                 casesContent += `    else if ("${languageCode}" == languageCode) {\n`;
                 casesContent += `      return SynchronousFuture<WidgetsLocalizations>(const _I18n_${normalized}());\n`;
                 casesContent += "    }\n";
             }
+
+            if (getLocale.length > 0) {
+                getLocale += "    else ";
+            }
+            getLocale += `if ("${languageCode}" == languageCode) {\n`;
+            getLocale += `      return _I18n_${normalized}();\n`;
+            getLocale += `    }\n`;
         }
 
         let result = template.replace("{locales}", localesContent);
         result = result.replace("{cases}", casesContent);
+        result = result.replace("{getLocale}", getLocale);
         return result;
     }
 
@@ -639,9 +648,20 @@ class GeneratedLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
     };
   }
 
+
+  I18n getLocale(Locale locale) {
+    assert(locale != null);
+    final languageCode = locale.languageCode;
+    
+    {getLocale}
+
+    return I18n();
+  }
+
+
   @override
   Future<WidgetsLocalizations> load(Locale locale) {
-    I18n._locale ??= locale;
+    I18n._locale = locale;
     I18n._shouldReload = false;
     final String lang = I18n._locale != null ? I18n._locale.toString() : "";
     final String languageCode = I18n._locale != null ? I18n._locale.languageCode : "";
