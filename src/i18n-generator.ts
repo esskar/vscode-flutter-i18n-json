@@ -18,6 +18,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
     private readonly hello = new Hello();
     private readonly varibales = new Variables();
+    private readonly functionNamesMap = new Map();
 
     constructor(
         private workspaceFolder: string,
@@ -153,6 +154,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         const defaultI18n = await this.readI18nFileAsync(config.defaultLocale || "", config);
         const functions = this.buildFunctionTable(defaultI18n);
+        this.functionNamesMap.clear();
 
         dartContent += this.generateFunctions(I18nGenerator.dart, "", false, undefined, functions);
 
@@ -210,6 +212,7 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
                 }
 
                 functionsContent += `/// ${func.body}\n  `;
+                this.functionNamesMap.set(func.name, func.name);
 
                 if (overwrite) {
                     functionsContent += "@override\n";
@@ -225,7 +228,15 @@ export class I18nGenerator implements IDisposable, InsertActionProviderDelegate 
 
         const textDirection = isRtl ? "rtl" : "ltr";
 
+        let functionNamesMap = 'Map get functionMap => {\n';
+        this.functionNamesMap.forEach((value, key) => {
+            functionNamesMap += "  ";
+            functionNamesMap += `  "${key}": ${value},\n`;
+        });
+        functionNamesMap += "  };\n";
+
         let result = template.replace(/{functions}/g, functionsContent);
+        result = result.replace(/{functionNamesMap}/g, functionNamesMap);
         result = result.replace(/{locale}/g, this.normalizeLocale(locale));
         result = result.replace(/{derived}/g, derived);
         result = result.replace(/{textDirection}/g, textDirection);
@@ -608,6 +619,8 @@ class I18n implements WidgetsLocalizations {
   TextDirection get textDirection => TextDirection.ltr;
 
   {functions}
+
+  {functionNamesMap}
 }
 `;
 
