@@ -1,4 +1,5 @@
 export interface I18nConfig {
+    rootFolder: string;
     defaultLocale: string;
     locales: string[];
     localePath: string;
